@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assign Work Order - Road Damage Detection</title>
+    <link rel="stylesheet" href="../shared/styles.css">
+    <link rel="stylesheet" href="styles/assignment.css">
+</head>
+<body>
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <h1>Assignment & Work Order</h1>
+        <div class="profile-icon" onclick="showAlert('Profile', 'Profile menu options', 'info')">👤</div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="nav-bar">
+        <a href="dashboard.html" class="nav-link">Dashboard</a>
+        <a href="verification.html" class="nav-link">Verify Reports</a>
+        <a href="assignment.html" class="nav-link active">Assign Work</a>
+        <a href="monitoring.html" class="nav-link">Monitor Work</a>
+        <a href="analytics.html" class="nav-link">Analytics</a>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="assignment-container">
+            <!-- Report Details -->
+            <div class="report-details-section">
+                <h2>Approved Report Details</h2>
+                <div class="card">
+                    <div class="report-detail-item" id="reportDetails">
+                        <!-- Report details will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Assignment Form -->
+            <div class="assignment-form-section">
+                <h2>Assign Contractor</h2>
+                <div class="card">
+                    <div class="form-group">
+                        <label class="form-label">Select Contractor</label>
+                        <select class="form-select" id="contractorSelect">
+                            <option value="">-- Select Contractor --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Priority</label>
+                        <select class="form-select" id="prioritySelect">
+                            <option value="normal">Normal</option>
+                            <option value="high">High</option>
+                            <option value="urgent">Urgent</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Expected Completion Date</label>
+                        <input type="date" class="form-input" id="completionDate">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Special Instructions (Optional)</label>
+                        <textarea 
+                            class="form-textarea" 
+                            id="instructionsInput" 
+                            placeholder="Add any special instructions for the contractor..."
+                            rows="3"
+                        ></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Work Order Preview -->
+            <div class="work-order-preview-section">
+                <h2>Work Order Preview</h2>
+                <div class="card">
+                    <div class="work-order-preview" id="workOrderPreview">
+                        <!-- Work order preview will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="assignment-actions">
+                <button class="btn btn-primary btn-large" onclick="assignWork()">
+                    Assign Work Order
+                </button>
+                <button class="btn btn-secondary" onclick="cancelAssignment()">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../shared/navigation.js"></script>
+    <script src="../shared/modal.js"></script>
+    <script src="scripts/assignment.js"></script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Road Damage Detection System - Entry</title>
+    <link rel="stylesheet" href="shared/styles.css">
+    <style>
+        .entry-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            gap: 2rem;
+            background: linear-gradient(135deg, #0f3460 0%, #16213e 100%);
+        }
+        .entry-card {
+            background: #1a1a2e;
+            padding: 3rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            text-align: center;
+            min-width: 300px;
+            border: 1px solid #0d6efd;
+        }
+        .entry-card h1 {
+            margin-bottom: 2rem;
+            color: #fff;
+        }
+        .entry-button {
+            display: block;
+            width: 100%;
+            padding: 1rem 2rem;
+            margin: 1rem 0;
+            background: #0d6efd;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            border: 1px solid #0d6efd;
+        }
+        .entry-button:hover {
+            background: #0b5ed7;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(13, 110, 253, 0.4);
+        }
+        .entry-button.secondary {
+            background: #16213e;
+            border: 1px solid #0f3460;
+        }
+        .entry-button.secondary:hover {
+            background: #0f3460;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(15, 52, 96, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="entry-container">
+        <div class="entry-card">
+            <h1>Road Damage Detection System</h1>
+            <a href="citizen/dashboard.html" class="entry-button">Citizen Interface</a>
+            <a href="official/dashboard.html" class="entry-button secondary">Official Interface</a>
+        </div>
+    </div>
+</body>
+</html>

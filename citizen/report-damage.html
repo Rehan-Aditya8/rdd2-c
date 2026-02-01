@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report Damage - Road Damage Detection</title>
+    <link rel="stylesheet" href="../shared/styles.css">
+    <link rel="stylesheet" href="styles/report-damage.css">
+</head>
+<body>
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <h1>Report New Damage</h1>
+        <div class="profile-icon" onclick="showAlert('Profile', 'Profile menu options', 'info')">👤</div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="nav-bar">
+        <a href="dashboard.html" class="nav-link">Dashboard</a>
+        <a href="report-damage.html" class="nav-link active">Report Damage</a>
+        <a href="tracking.html" class="nav-link">Track Reports</a>
+        <a href="notifications.html" class="nav-link">Notifications</a>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="report-form-container">
+            <!-- Image Upload Section -->
+            <div class="upload-section">
+                <h2>Upload Damage Photo</h2>
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-placeholder" id="uploadPlaceholder">
+                        <div class="upload-icon">📷</div>
+                        <p>Click to upload or take a photo</p>
+                        <button class="btn btn-primary" onclick="triggerFileInput()">Choose File</button>
+                    </div>
+                    <img id="imagePreview" class="image-preview" style="display: none;" alt="Damage preview">
+                </div>
+                <input type="file" id="fileInput" accept="image/*" style="display: none;" onchange="handleFileSelect(event)">
+                <div class="upload-actions" id="uploadActions" style="display: none;">
+                    <button class="btn btn-secondary" onclick="retakePhoto()">Retake / Reupload</button>
+                </div>
+            </div>
+
+            <!-- Auto-filled Information -->
+            <div class="info-section">
+                <h2>Report Information</h2>
+                
+                <div class="form-group">
+                    <label class="form-label">📍 GPS Location</label>
+                    <div class="info-display" id="locationDisplay">
+                        Loading location...
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">🕐 Timestamp</label>
+                    <div class="info-display" id="timestampDisplay">
+                        Loading timestamp...
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Description (Optional)</label>
+                    <textarea 
+                        class="form-textarea" 
+                        id="descriptionInput" 
+                        placeholder="Provide additional details about the damage..."
+                        rows="4"
+                    ></textarea>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="submit-section">
+                <button class="btn btn-primary btn-large" id="submitBtn" onclick="submitReport()" disabled>
+                    Submit Report
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../shared/navigation.js"></script>
+    <script src="../shared/modal.js"></script>
+    <script src="scripts/report-damage.js"></script>
+</body>
+</html>
