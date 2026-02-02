@@ -1,69 +1,73 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Verify Report - Road Damage Detection</title>
+
     <link rel="stylesheet" href="../shared/styles.css">
     <link rel="stylesheet" href="styles/verification.css">
 </head>
+
 <body>
-    <!-- Top Bar -->
+
+    <!-- TOP BAR -->
     <div class="top-bar">
         <h1>Report Verification</h1>
-        <div class="profile-icon" onclick="showAlert('Profile', 'Profile menu options', 'info')">👤</div>
+        <div class="profile-icon">👤</div>
     </div>
 
-    <!-- Navigation -->
+    <!-- NAVIGATION -->
     <nav class="nav-bar">
         <a href="dashboard.html" class="nav-link">Dashboard</a>
-        <a href="verification.html" class="nav-link active">Verify Reports</a>
+        <a href="work-reports.html" class="nav-link">Work Reports</a>
+
+        <!-- ❌ INTENTIONALLY REMOVED -->
+        <!-- Verification must only open with ?id= -->
+
         <a href="assignment.html" class="nav-link">Assign Work</a>
         <a href="monitoring.html" class="nav-link">Monitor Work</a>
         <a href="analytics.html" class="nav-link">Analytics</a>
     </nav>
 
-    <!-- Main Content -->
+    <!-- MAIN CONTENT -->
     <div class="container">
         <div class="verification-container">
-            <!-- Left Side: Media Preview -->
+
+            <!-- LEFT: MEDIA -->
             <div class="media-section">
                 <h2>Uploaded Media</h2>
+
                 <div class="media-preview">
-                    <img id="reportImage" class="image-preview" alt="Reported damage">
+                    <img id="reportImage" class="image-preview" alt="Reported Damage" style="display:none;">
                 </div>
-                
+
                 <h3>AI Damage Detection Result</h3>
-                <div class="ai-result" id="aiResult">
-                    <!-- AI result will be populated by JavaScript -->
-                </div>
-                
-                <h3>Location Map</h3>
-                <div class="map-preview" id="mapPreview">
-                    <!-- Static map placeholder -->
+                <div class="ai-result" id="aiResult"></div>
+
+                <h3>Location</h3>
+                <div class="map-preview">
                     <div class="map-placeholder">
                         <div class="map-icon">🗺️</div>
-                        <p>Map View</p>
-                        <p class="map-coords" id="mapCoords"></p>
+                        <p id="mapCoords"></p>
                     </div>
                 </div>
             </div>
 
-            <!-- Right Side: Action Panel -->
+            <!-- RIGHT: ACTIONS -->
             <div class="action-panel">
                 <h2>Report Information</h2>
-                <div class="report-info" id="reportInfo">
-                    <!-- Report info will be populated by JavaScript -->
-                </div>
+                <div class="report-info" id="reportInfo"></div>
 
                 <h2>Verification</h2>
                 <div class="form-group">
                     <label class="form-label">Reason for Decision</label>
-                    <textarea 
-                        class="form-textarea" 
-                        id="reasonInput" 
-                        placeholder="Enter reason for approval or rejection..."
+                    <textarea
+                        id="reasonInput"
+                        class="form-textarea"
                         rows="4"
+                        placeholder="Enter reason for approval or rejection..."
                     ></textarea>
                 </div>
 
@@ -76,11 +80,14 @@
                     </button>
                 </div>
             </div>
+
         </div>
     </div>
 
-    <script src="../shared/navigation.js"></script>
+    <!-- SCRIPTS -->
+    <script src="../shared/auth.js"></script>
     <script src="../shared/modal.js"></script>
     <script src="scripts/verification.js"></script>
+
 </body>
 </html>

@@ -1,84 +1,98 @@
 // Citizen Dashboard JavaScript
 
-// Dummy data for recent reports
-const recentReportsData = [
-    {
-        id: 'RPT-001',
-        title: 'Pothole on Main Street',
-        location: 'Main Street, Block 5',
-        date: '2024-01-15',
-        status: 'in-progress',
-        statusText: 'In Progress'
-    },
-    {
-        id: 'RPT-002',
-        title: 'Cracked Road Surface',
-        location: 'Park Avenue, Near School',
-        date: '2024-01-14',
-        status: 'reported',
-        statusText: 'Reported'
-    },
-    {
-        id: 'RPT-003',
-        title: 'Severe Pothole',
-        location: 'Highway 101, Exit 3',
-        date: '2024-01-10',
-        status: 'completed',
-        statusText: 'Completed'
-    },
-    {
-        id: 'RPT-004',
-        title: 'Road Surface Damage',
-        location: 'Oak Street, Intersection',
-        date: '2024-01-08',
-        status: 'completed',
-        statusText: 'Completed'
-    },
-    {
-        id: 'RPT-005',
-        title: 'Large Pothole',
-        location: 'Elm Avenue, Block 12',
-        date: '2024-01-05',
-        status: 'completed',
-        statusText: 'Completed'
+// Initialize dashboard when page loads
+document.addEventListener('DOMContentLoaded', async () => {
+    Auth.requireRole('citizen');
+    await loadReports();
+});
+
+/**
+ * Fetch and render reports from API
+ */
+async function loadReports() {
+    const container = document.getElementById('recentReportsList');
+    container.innerHTML = '<div style="text-align:center; padding: 2rem;">Loading reports...</div>';
+
+    try {
+        const response = await Auth.fetchWithAuth('/api/citizen/reports');
+        if (!response.ok) throw new Error('Failed to fetch reports');
+
+        const reports = await response.json();
+        renderRecentReports(reports);
+        updateStatusSummary(reports);
+
+    } catch (error) {
+        console.error('Load Error:', error);
+        container.innerHTML = `<div style="text-align:center; color: #ff6b6b; padding: 2rem;">Error: ${error.message}</div>`;
     }
-];
+}
 
 /**
  * Render recent reports list
  */
-function renderRecentReports() {
+function renderRecentReports(reports) {
     const container = document.getElementById('recentReportsList');
-    const recentReports = recentReportsData.slice(0, 5); // Show last 5
-    
-    container.innerHTML = recentReports.map(report => `
-        <div class="report-card">
-            <div class="report-card-info">
-                <div class="report-card-title">${report.title}</div>
-                <div class="report-card-meta">
-                    📍 ${report.location} | 📅 ${report.date}
+
+    if (reports.length === 0) {
+        container.innerHTML = '<div style="text-align:center; color: #888; padding: 2rem;">No reports found. Submit your first report!</div>';
+        return;
+    }
+
+    container.innerHTML = reports.map(report => {
+        // Map backend status to frontend classes/text
+        const statusMap = {
+            'submitted': { class: 'reported', text: 'Reported' },
+            'verified': { class: 'in-progress', text: 'Verified' },
+            'assigned': { class: 'in-progress', text: 'Assigned' },
+            'in-progress': { class: 'in-progress', text: 'In Progress' },
+            'resolved': { class: 'completed', text: 'Completed' },
+            'rejected': { class: 'completed', text: 'Rejected' }
+        };
+
+        const statusInfo = statusMap[report.status] || { class: 'reported', text: report.status };
+        const dateStr = new Date(report.created_at).toLocaleDateString();
+
+        return `
+            <div class="report-card">
+                <div class="report-card-info">
+                    <div class="report-card-title">${report.damage_type || 'Infrastructure Issue'}</div>
+                    <div class="report-card-meta">
+                        📍 ${report.location || 'Unknown Location'} | 📅 ${dateStr}
+                    </div>
+                    <span class="status-chip status-${statusInfo.class}">${statusInfo.text}</span>
                 </div>
-                <span class="status-chip status-${report.status}">${report.statusText}</span>
+                <div class="report-card-actions">
+                    <button class="btn btn-secondary" onclick="viewReport('${report.id}')">
+                        View Details
+                    </button>
+                </div>
             </div>
-            <div class="report-card-actions">
-                <button class="btn btn-secondary" onclick="viewReport('${report.id}')">
-                    View Details
-                </button>
-            </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
+}
+
+/**
+ * Update Status Summary Chips
+ */
+function updateStatusSummary(reports) {
+    const reported = reports.filter(r => r.status === 'submitted').length;
+    const inProgress = reports.filter(r => ['verified', 'assigned', 'in-progress'].includes(r.status)).length;
+    const completed = reports.filter(r => ['resolved', 'rejected'].includes(r.status)).length;
+
+    const container = document.querySelector('.status-chips-container');
+    container.innerHTML = `
+        <span class="status-chip status-reported">Reported: ${reported}</span>
+        <span class="status-chip status-in-progress">In Progress: ${inProgress}</span>
+        <span class="status-chip status-completed">Completed: ${completed}</span>
+    `;
 }
 
 /**
  * View report details
  */
 function viewReport(reportId) {
-    // Store report ID in sessionStorage for tracking page
     sessionStorage.setItem('selectedReportId', reportId);
     window.location.href = 'tracking.html';
 }
 
-// Initialize dashboard when page loads
-document.addEventListener('DOMContentLoaded', () => {
-    renderRecentReports();
-});
+window.viewReport = viewReport; // Make accessible globally

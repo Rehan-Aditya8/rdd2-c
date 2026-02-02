@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <link rel="stylesheet" href="../shared/styles.css">
     <link rel="stylesheet" href="styles/report-damage.css">
 </head>
+
 <body>
     <!-- Top Bar -->
     <div class="top-bar">
@@ -36,7 +38,8 @@
                     </div>
                     <img id="imagePreview" class="image-preview" style="display: none;" alt="Damage preview">
                 </div>
-                <input type="file" id="fileInput" accept="image/*" style="display: none;" onchange="handleFileSelect(event)">
+                <input type="file" id="fileInput" accept="image/*" style="display: none;"
+                    onchange="handleFileSelect(event)">
                 <div class="upload-actions" id="uploadActions" style="display: none;">
                     <button class="btn btn-secondary" onclick="retakePhoto()">Retake / Reupload</button>
                 </div>
@@ -45,7 +48,7 @@
             <!-- Auto-filled Information -->
             <div class="info-section">
                 <h2>Report Information</h2>
-                
+
                 <div class="form-group">
                     <label class="form-label">📍 GPS Location</label>
                     <div class="info-display" id="locationDisplay">
@@ -62,12 +65,8 @@
 
                 <div class="form-group">
                     <label class="form-label">Description (Optional)</label>
-                    <textarea 
-                        class="form-textarea" 
-                        id="descriptionInput" 
-                        placeholder="Provide additional details about the damage..."
-                        rows="4"
-                    ></textarea>
+                    <textarea class="form-textarea" id="descriptionInput"
+                        placeholder="Provide additional details about the damage..." rows="4"></textarea>
                 </div>
             </div>
 
@@ -82,6 +81,8 @@
 
     <script src="../shared/navigation.js"></script>
     <script src="../shared/modal.js"></script>
+    <script src="../shared/auth.js"></script>
     <script src="scripts/report-damage.js"></script>
 </body>
+
 </html>

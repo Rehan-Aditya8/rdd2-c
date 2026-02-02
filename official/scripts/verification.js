@@ -1,148 +1,144 @@
-// Verification Screen JavaScript
+// =====================================================
+// INIT
+// =====================================================
+document.addEventListener('DOMContentLoaded', () => {
+    Auth.requireRole('official');
 
-// Dummy report data for verification
-const verificationReportData = {
-    id: 'RPT-002',
-    location: 'Park Avenue, Near School',
-    address: 'Park Avenue, Block 7, Near City School, New Delhi',
-    coordinates: {
-        lat: 28.6139,
-        lng: 77.2090
-    },
-    date: '2024-01-14',
-    time: '3:45 PM',
-    image: 'https://via.placeholder.com/800x600/764ba2/ffffff?text=Damage+Photo',
-    aiResults: {
-        damageType: 'Pothole',
-        severity: 'Medium',
-        confidence: '87%',
-        estimatedSize: '2.5m x 1.8m',
-        depth: '15-20cm'
-    },
-    reporter: {
-        name: 'Citizen User',
-        contact: 'user@example.com'
+    const params = new URLSearchParams(window.location.search);
+    const reportId = params.get('id');
+
+    if (!reportId) {
+        showModal(
+            'Invalid Access',
+            'Please select a report from Work Reports to verify.'
+        );
+        setTimeout(() => {
+            window.location.href = 'work-reports.html';
+        }, 1200);
+        return;
     }
-};
 
-/**
- * Initialize verification page
- */
-function initVerification() {
-    // Check if report ID is in sessionStorage
-    const reportId = sessionStorage.getItem('selectedReportId');
-    if (reportId) {
-        // In a real app, fetch report data by ID
-        // For now, use dummy data
-        loadReportData(verificationReportData);
-    } else {
-        // Load default report
-        loadReportData(verificationReportData);
+    window.currentReportId = reportId;
+    loadReport();
+});
+
+// =====================================================
+// LOAD REPORT DATA
+// =====================================================
+async function loadReport() {
+    try {
+        const response = await Auth.fetchWithAuth(
+            `/api/official/reports/${window.currentReportId}`
+        );
+
+        if (!response.ok) {
+            throw new Error('Failed to load report');
+        }
+
+        const report = await response.json();
+        populateReport(report);
+
+    } catch (error) {
+        console.error(error);
+        showModal('Error', error.message);
     }
 }
 
-/**
- * Load report data
- */
-function loadReportData(report) {
-    // Set report image
-    document.getElementById('reportImage').src = report.image;
-    
-    // Set AI results
-    const aiResult = document.getElementById('aiResult');
-    aiResult.innerHTML = `
+// =====================================================
+// POPULATE UI
+// =====================================================
+async function populateReport(report) {
+
+    // IMAGE (SECURE FETCH)
+    const img = document.getElementById('reportImage');
+
+    if (report.image_url) {
+        try {
+            const response = await Auth.fetchWithAuth(report.image_url);
+            if (response.ok) {
+                const blob = await response.blob();
+                img.src = URL.createObjectURL(blob);
+                img.style.display = 'block';
+            }
+        } catch (err) {
+            console.error('Image load failed');
+        }
+    }
+
+    // AI RESULT
+    document.getElementById('aiResult').innerHTML = `
         <div class="ai-result-item">
-            <strong>Damage Type:</strong> ${report.aiResults.damageType}
+            <strong>Damage Type:</strong> ${report.damage_type || 'N/A'}
         </div>
         <div class="ai-result-item">
-            <strong>Severity:</strong> ${report.aiResults.severity}
+            <strong>Confidence:</strong>
+            ${report.confidence !== null
+                ? (report.confidence * 100).toFixed(2) + '%'
+                : 'N/A'}
         </div>
         <div class="ai-result-item">
-            <strong>Confidence:</strong> ${report.aiResults.confidence}
-        </div>
-        <div class="ai-result-item">
-            <strong>Estimated Size:</strong> ${report.aiResults.estimatedSize}
-        </div>
-        <div class="ai-result-item">
-            <strong>Depth:</strong> ${report.aiResults.depth}
+            <strong>Severity:</strong> ${report.severity || 'N/A'}
         </div>
     `;
-    
-    // Set map coordinates
-    document.getElementById('mapCoords').textContent = 
-        `${report.coordinates.lat}, ${report.coordinates.lng}`;
-    
-    // Set report info
-    const reportInfo = document.getElementById('reportInfo');
-    reportInfo.innerHTML = `
-        <div class="report-info-item">
-            <strong>Report ID:</strong> ${report.id}
-        </div>
-        <div class="report-info-item">
-            <strong>Location:</strong> ${report.location}
-        </div>
-        <div class="report-info-item">
-            <strong>Full Address:</strong> ${report.address}
-        </div>
-        <div class="report-info-item">
-            <strong>Date & Time:</strong> ${report.date} at ${report.time}
-        </div>
-        <div class="report-info-item">
-            <strong>Reporter:</strong> ${report.reporter.name}
-        </div>
-        <div class="report-info-item">
-            <strong>Contact:</strong> ${report.reporter.contact}
-        </div>
+
+    // LOCATION
+    document.getElementById('mapCoords').textContent =
+        `Lat: ${report.latitude ?? 'N/A'}, Lng: ${report.longitude ?? 'N/A'}`;
+
+    // REPORT INFO
+    document.getElementById('reportInfo').innerHTML = `
+        <div class="report-info-item"><strong>Report ID:</strong> ${report.id}</div>
+        <div class="report-info-item"><strong>Reported By:</strong> ${report.reported_by || 'Citizen'}</div>
+        <div class="report-info-item"><strong>Date:</strong> ${new Date(report.created_at).toLocaleString()}</div>
+        <div class="report-info-item"><strong>Status:</strong> ${report.status}</div>
     `;
 }
 
-/**
- * Approve report
- */
+// =====================================================
+// VERIFY ACTIONS
+// =====================================================
+async function submitVerification(status) {
+    const reason = document.getElementById('reasonInput').value.trim();
+
+    if (!reason) {
+        showModal('Reason Required', 'Please provide a reason');
+        return;
+    }
+
+    try {
+        const response = await Auth.fetchWithAuth(
+            `/api/official/reports/${window.currentReportId}/verify`,
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status, reason })
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error('Verification failed');
+        }
+
+        showModal('Success', `Report ${status} successfully`, 'success');
+
+        setTimeout(() => {
+            window.location.href = 'work-reports.html';
+        }, 1500);
+
+    } catch (error) {
+        console.error(error);
+        showModal('Error', error.message);
+    }
+}
+
 function approveReport() {
-    const reason = document.getElementById('reasonInput').value.trim();
-    
-    if (!reason) {
-        showAlert('Reason Required', 'Please provide a reason for approval.', 'warning');
-        return;
-    }
-    
-    const reportId = verificationReportData.id;
-    
-    // In a real app, send approval to backend
-    showAlert('Report Approved', `Report ${reportId} has been approved.\n\nReason: ${reason}\n\nRedirecting to dashboard...`, 'success', () => {
-        // Clear session storage
-        sessionStorage.removeItem('selectedReportId');
-        
-        // Redirect to dashboard
-        window.location.href = 'dashboard.html';
-    });
+    submitVerification('approved');
 }
 
-/**
- * Reject report
- */
 function rejectReport() {
-    const reason = document.getElementById('reasonInput').value.trim();
-    
-    if (!reason) {
-        showAlert('Reason Required', 'Please provide a reason for rejection.', 'warning');
-        return;
-    }
-    
-    const reportId = verificationReportData.id;
-    
-    // In a real app, send rejection to backend
-    showConfirm('Confirm Rejection', `Are you sure you want to reject report ${reportId}?\n\nReason: ${reason}`, () => {
-        showAlert('Report Rejected', `Report ${reportId} has been rejected.\n\nRedirecting to dashboard...`, 'error', () => {
-            // Clear session storage
-            sessionStorage.removeItem('selectedReportId');
-            
-            // Redirect to dashboard
-            window.location.href = 'dashboard.html';
-        });
-    });
+    submitVerification('rejected');
 }
 
-// Initialize when page loads
-document.addEventListener('DOMContentLoaded', initVerification);
+// EXPOSE
+window.approveReport = approveReport;
+window.rejectReport = rejectReport;

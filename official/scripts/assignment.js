@@ -1,217 +1,210 @@
-// Assignment Screen JavaScript
+// =====================================================
+// OFFICIAL AUTH GUARD
+// =====================================================
+Auth.requireRole('official');
 
-// Dummy contractors data
-const contractorsData = [
-    { id: 'CONT-001', name: 'ABC Road Construction Co.', specialization: 'Pothole Repair', rating: 4.5 },
-    { id: 'CONT-002', name: 'XYZ Infrastructure Ltd.', specialization: 'Road Resurfacing', rating: 4.8 },
-    { id: 'CONT-003', name: 'City Builders Inc.', specialization: 'General Road Maintenance', rating: 4.2 },
-    { id: 'CONT-004', name: 'QuickFix Contractors', specialization: 'Emergency Repairs', rating: 4.6 }
-];
+// =====================================================
+// GET REPORT ID
+// assignment.html?id=12
+// =====================================================
+const params = new URLSearchParams(window.location.search);
+const reportId = params.get('id');
 
-// Dummy report data
-const assignmentReportData = {
-    id: 'RPT-004',
-    location: 'Oak Street, Intersection',
-    address: 'Oak Street, Intersection with Main Road, Block 3',
-    severity: 'Low',
-    damageType: 'Cracked Road Surface',
-    date: '2024-01-12',
-    estimatedCost: '₹15,000',
-    estimatedTime: '2-3 days'
-};
-
-/**
- * Initialize assignment page
- */
-function initAssignment() {
-    // Check if report ID is in sessionStorage
-    const reportId = sessionStorage.getItem('selectedReportId');
-    if (reportId) {
-        // In a real app, fetch report data by ID
-        // For now, use dummy data
-        loadReportDetails(assignmentReportData);
-    } else {
-        loadReportDetails(assignmentReportData);
-    }
-    
-    // Populate contractors dropdown
-    populateContractors();
-    
-    // Set default completion date (7 days from now)
-    const defaultDate = new Date();
-    defaultDate.setDate(defaultDate.getDate() + 7);
-    document.getElementById('completionDate').valueAsDate = defaultDate;
-    
-    // Update work order preview on change
-    document.getElementById('contractorSelect').addEventListener('change', updateWorkOrderPreview);
-    document.getElementById('prioritySelect').addEventListener('change', updateWorkOrderPreview);
-    document.getElementById('completionDate').addEventListener('change', updateWorkOrderPreview);
-    document.getElementById('instructionsInput').addEventListener('input', updateWorkOrderPreview);
-    
-    // Initial preview
-    updateWorkOrderPreview();
+if (!reportId) {
+    showModal('Error', 'No approved report selected');
+    throw new Error('Missing report ID');
 }
 
-/**
- * Load report details
- */
-function loadReportDetails(report) {
-    const detailsContainer = document.getElementById('reportDetails');
-    detailsContainer.innerHTML = `
-        <div class="report-detail-row">
-            <strong>Report ID:</strong>
-            <span>${report.id}</span>
-        </div>
-        <div class="report-detail-row">
-            <strong>Location:</strong>
-            <span>${report.location}</span>
-        </div>
-        <div class="report-detail-row">
-            <strong>Full Address:</strong>
-            <span>${report.address}</span>
-        </div>
-        <div class="report-detail-row">
-            <strong>Severity:</strong>
-            <span>${report.severity}</span>
-        </div>
-        <div class="report-detail-row">
-            <strong>Damage Type:</strong>
-            <span>${report.damageType}</span>
-        </div>
-        <div class="report-detail-row">
-            <strong>Report Date:</strong>
-            <span>${report.date}</span>
-        </div>
-        <div class="report-detail-row">
-            <strong>Estimated Cost:</strong>
-            <span>${report.estimatedCost}</span>
-        </div>
-        <div class="report-detail-row">
-            <strong>Estimated Time:</strong>
-            <span>${report.estimatedTime}</span>
-        </div>
+// =====================================================
+// GLOBAL STATE
+// =====================================================
+let reportData = null;
+let contractors = [];
+
+// =====================================================
+// LOAD INITIAL DATA
+// =====================================================
+async function initAssignment() {
+    try {
+        await loadReport();
+        await loadContractors();
+        setDefaultDate();
+        bindPreviewUpdates();
+        updatePreview();
+    } catch (err) {
+        showModal('Error', err.message);
+    }
+}
+
+// =====================================================
+// LOAD APPROVED REPORT
+// =====================================================
+async function loadReport() {
+    const res = await Auth.fetchWithAuth(
+        `/api/official/reports/${reportId}`
+    );
+
+    if (!res.ok) {
+        throw new Error('Failed to load report');
+    }
+
+    const report = await res.json();
+
+    if (report.status !== 'APPROVED') {
+        throw new Error('Only approved reports can be assigned');
+    }
+
+    reportData = report;
+    renderReportDetails(report);
+}
+
+// =====================================================
+// LOAD CONTRACTORS
+// =====================================================
+async function loadContractors() {
+    const res = await Auth.fetchWithAuth('/api/official/contractors');
+
+    if (!res.ok) {
+        throw new Error('Failed to load contractors');
+    }
+
+    contractors = await res.json();
+    populateContractorSelect();
+}
+
+// =====================================================
+// RENDER REPORT DETAILS
+// =====================================================
+function renderReportDetails(report) {
+    document.getElementById('reportDetails').innerHTML = `
+        <div class="report-detail-row"><strong>Report ID:</strong> ${report.id}</div>
+        <div class="report-detail-row"><strong>Location:</strong> ${report.location}</div>
+        <div class="report-detail-row"><strong>Damage Type:</strong> ${report.damage_type}</div>
+        <div class="report-detail-row"><strong>Severity:</strong> ${report.severity}</div>
+        <div class="report-detail-row"><strong>Confidence:</strong> ${(report.confidence * 100).toFixed(2)}%</div>
     `;
 }
 
-/**
- * Populate contractors dropdown
- */
-function populateContractors() {
+// =====================================================
+// CONTRACTOR SELECT
+// =====================================================
+function populateContractorSelect() {
     const select = document.getElementById('contractorSelect');
-    contractorsData.forEach(contractor => {
-        const option = document.createElement('option');
-        option.value = contractor.id;
-        option.textContent = `${contractor.name} (${contractor.specialization}) - ⭐ ${contractor.rating}`;
-        select.appendChild(option);
+
+    contractors.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = `${c.name} (${c.specialization}) ⭐ ${c.rating}`;
+        select.appendChild(opt);
     });
 }
 
-/**
- * Update work order preview
- */
-function updateWorkOrderPreview() {
+// =====================================================
+// DEFAULT DATE
+// =====================================================
+function setDefaultDate() {
+    const date = new Date();
+    date.setDate(date.getDate() + 7);
+    document.getElementById('completionDate').valueAsDate = date;
+}
+
+// =====================================================
+// PREVIEW UPDATES
+// =====================================================
+function bindPreviewUpdates() {
+    ['contractorSelect', 'prioritySelect', 'completionDate', 'instructionsInput']
+        .forEach(id => {
+            document.getElementById(id).addEventListener('change', updatePreview);
+            document.getElementById(id).addEventListener('input', updatePreview);
+        });
+}
+
+function updatePreview() {
+    if (!reportData) return;
+
     const contractorId = document.getElementById('contractorSelect').value;
     const priority = document.getElementById('prioritySelect').value;
     const completionDate = document.getElementById('completionDate').value;
     const instructions = document.getElementById('instructionsInput').value;
-    
-    const contractor = contractorsData.find(c => c.id === contractorId);
-    const contractorName = contractor ? contractor.name : '[Not Selected]';
-    
-    const workOrderNumber = 'WO-' + Date.now().toString().slice(-8);
-    const today = new Date().toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-    });
-    
-    const formattedDate = completionDate ? 
-        new Date(completionDate).toLocaleDateString('en-US', { 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
-        }) : '[Not Set]';
-    
-    const preview = document.getElementById('workOrderPreview');
-    preview.textContent = `
-═══════════════════════════════════════════════════════
-              WORK ORDER
-═══════════════════════════════════════════════════════
 
-<strong>Work Order Number:</strong> ${workOrderNumber}
-<strong>Date:</strong> ${today}
-<strong>Report ID:</strong> ${assignmentReportData.id}
+    const contractor = contractors.find(c => c.id == contractorId);
 
-───────────────────────────────────────────────────────
-<strong>ASSIGNMENT DETAILS</strong>
-───────────────────────────────────────────────────────
+    document.getElementById('workOrderPreview').textContent = `
+WORK ORDER
+========================================
+Report ID: ${reportData.id}
+Damage Type: ${reportData.damage_type}
+Location: ${reportData.location}
 
-<strong>Contractor:</strong> ${contractorName}
-<strong>Priority:</strong> ${priority.toUpperCase()}
-<strong>Expected Completion:</strong> ${formattedDate}
+----------------------------------------
+Contractor: ${contractor ? contractor.name : '[Not Selected]'}
+Priority: ${priority}
+Expected Completion: ${completionDate || '[Not Set]'}
 
-───────────────────────────────────────────────────────
-<strong>WORK LOCATION</strong>
-───────────────────────────────────────────────────────
+----------------------------------------
+Special Instructions:
+${instructions || 'None'}
 
-<strong>Location:</strong> ${assignmentReportData.location}
-<strong>Address:</strong> ${assignmentReportData.address}
-<strong>Damage Type:</strong> ${assignmentReportData.damageType}
-<strong>Severity:</strong> ${assignmentReportData.severity}
-
-───────────────────────────────────────────────────────
-<strong>SPECIAL INSTRUCTIONS</strong>
-───────────────────────────────────────────────────────
-
-${instructions || 'None specified.'}
-
-───────────────────────────────────────────────────────
-<strong>ESTIMATED COST:</strong> ${assignmentReportData.estimatedCost}
-<strong>ESTIMATED TIME:</strong> ${assignmentReportData.estimatedTime}
-═══════════════════════════════════════════════════════
+========================================
     `.trim();
 }
 
-/**
- * Assign work
- */
-function assignWork() {
+// =====================================================
+// ASSIGN WORK ORDER
+// =====================================================
+async function assignWork() {
     const contractorId = document.getElementById('contractorSelect').value;
     const priority = document.getElementById('prioritySelect').value;
     const completionDate = document.getElementById('completionDate').value;
-    
-    if (!contractorId) {
-        showAlert('Selection Required', 'Please select a contractor.', 'warning');
+    const instructions = document.getElementById('instructionsInput').value;
+
+    if (!contractorId || !completionDate) {
+        showModal('Validation Error', 'Contractor and completion date are required');
         return;
     }
-    
-    if (!completionDate) {
-        showAlert('Date Required', 'Please set an expected completion date.', 'warning');
-        return;
-    }
-    
-    const contractor = contractorsData.find(c => c.id === contractorId);
-    
-    showConfirm('Confirm Assignment', `Assign work order to ${contractor.name}?\n\nPriority: ${priority}\nExpected Completion: ${new Date(completionDate).toLocaleDateString()}`, () => {
-        showAlert('Assignment Successful', `Work order assigned successfully!\n\nContractor: ${contractor.name}\nReport ID: ${assignmentReportData.id}\n\nRedirecting to dashboard...`, 'success', () => {
-            // Clear session storage
-            sessionStorage.removeItem('selectedReportId');
-            
-            // Redirect to dashboard
+
+    try {
+        const res = await Auth.fetchWithAuth(
+            `/api/official/reports/${reportId}/assign`,
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contractor_id: contractorId,
+                    priority: priority,
+                    expected_completion: completionDate,
+                    instructions: instructions
+                })
+            }
+        );
+
+        if (!res.ok) {
+            throw new Error('Assignment failed');
+        }
+
+        showModal(
+            'Success',
+            'Work order assigned successfully',
+            'success'
+        );
+
+        setTimeout(() => {
             window.location.href = 'dashboard.html';
-        });
-    });
+        }, 1500);
+
+    } catch (err) {
+        showModal('Error', err.message);
+    }
 }
 
-/**
- * Cancel assignment
- */
+// =====================================================
+// CANCEL
+// =====================================================
 function cancelAssignment() {
-    showConfirm('Confirm Cancellation', 'Are you sure you want to cancel? Changes will be lost.', () => {
-        sessionStorage.removeItem('selectedReportId');
-        window.location.href = 'dashboard.html';
-    });
+    window.location.href = 'dashboard.html';
 }
 
-// Initialize when page loads
+// =====================================================
+// INIT
+// =====================================================
 document.addEventListener('DOMContentLoaded', initAssignment);
