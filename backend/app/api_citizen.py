@@ -125,3 +125,67 @@ def submit_report():
         "msg": "Report submitted successfully",
         "report_id": report.id
     }), 201
+
+# =====================================================
+# 📋 GET USER'S REPORTS
+# =====================================================
+@citizen_bp.route('/reports', methods=['GET'])
+def get_user_reports():
+    """
+    Fetch all reports submitted by the logged-in citizen.
+    Used by: citizen/dashboard.html
+    """
+    user_id = get_jwt_identity()
+    
+    reports = DamageReport.query.filter_by(
+        citizen_id=user_id
+    ).order_by(
+        DamageReport.created_at.desc()
+    ).all()
+    
+    return jsonify([
+        {
+            "id": r.id,
+            "location": r.location,
+            "latitude": r.latitude,
+            "longitude": r.longitude,
+            "damage_type": r.detected_damage_type,
+            "confidence": r.confidence_score,
+            "severity": r.severity,
+            "status": r.status,
+            "created_at": r.created_at.isoformat(),
+            "image_url": f"/api/files/images/{r.image_path}"
+        }
+        for r in reports
+    ]), 200
+
+
+# =====================================================
+# 📊 USER REPORT STATUS SUMMARY
+# =====================================================
+@citizen_bp.route('/report-status-summary', methods=['GET'])
+def report_status_summary():
+    user_id = get_jwt_identity()
+
+    reported_count = DamageReport.query.filter_by(
+        citizen_id=user_id,
+        status='submitted'
+    ).count()
+
+    in_progress_count = DamageReport.query.filter_by(
+        citizen_id=user_id,
+        status='in_progress'
+    ).count()
+
+    completed_count = DamageReport.query.filter_by(
+        citizen_id=user_id,
+        status='completed'
+    ).count()
+
+    return jsonify({
+        "reported": reported_count,
+        "in_progress": in_progress_count,
+        "completed": completed_count
+    }), 200
+
+

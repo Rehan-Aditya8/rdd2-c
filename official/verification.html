@@ -8,6 +8,10 @@
 
     <link rel="stylesheet" href="../shared/styles.css">
     <link rel="stylesheet" href="styles/verification.css">
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 </head>
 
 <body>
@@ -48,11 +52,10 @@
 
                 <h3>Location</h3>
                 <div class="map-preview">
-                    <div class="map-placeholder">
-                        <div class="map-icon">🗺️</div>
-                        <p id="mapCoords"></p>
-                    </div>
+                    <div id="map" style="width:100%; height:250px; border-radius:8px;"></div>
+                    <p id="mapCoords"></p>
                 </div>
+
             </div>
 
             <!-- RIGHT: ACTIONS -->
@@ -63,12 +66,8 @@
                 <h2>Verification</h2>
                 <div class="form-group">
                     <label class="form-label">Reason for Decision</label>
-                    <textarea
-                        id="reasonInput"
-                        class="form-textarea"
-                        rows="4"
-                        placeholder="Enter reason for approval or rejection..."
-                    ></textarea>
+                    <textarea id="reasonInput" class="form-textarea" rows="4"
+                        placeholder="Enter reason for approval or rejection..."></textarea>
                 </div>
 
                 <div class="verification-actions">
@@ -87,7 +86,14 @@
     <!-- SCRIPTS -->
     <script src="../shared/auth.js"></script>
     <script src="../shared/modal.js"></script>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
     <script src="scripts/verification.js"></script>
 
+
 </body>
+
 </html>

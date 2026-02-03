@@ -1,4 +1,10 @@
 // =====================================================
+// LEAFLET MAP CONFIG
+// =====================================================
+let mapInstance = null;
+
+
+// =====================================================
 // INIT
 // =====================================================
 document.addEventListener('DOMContentLoaded', () => {
@@ -45,6 +51,45 @@ async function loadReport() {
 }
 
 // =====================================================
+// LOAD MAP WITH MARKER (LEAFLET + OSM)
+// =====================================================
+function loadMap(lat, lng) {
+
+    if (mapInstance) return; // prevent re-init
+
+    document.getElementById('mapCoords').textContent =
+        `Lat: ${lat}, Lng: ${lng}`;
+
+    mapInstance = L.map('map', {
+        zoomControl: true,     //✅ shows + / − buttons
+        dragging: true,        // allow pan
+        scrollWheelZoom: false // optional
+    }).setView([lat, lng], 15);
+
+
+
+    // OpenStreetMap tiles (FREE)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(mapInstance);
+
+    // Marker
+    L.marker([lat, lng])
+        .addTo(mapInstance)
+        .bindPopup('Reported Damage Location');
+
+    // OPTIONAL POLISH
+    mapInstance.setMinZoom(10);
+    mapInstance.setMaxZoom(18);
+
+    // Fix layout render issues
+    setTimeout(() => {
+        mapInstance.invalidateSize();
+    }, 100);
+}
+
+
+// =====================================================
 // POPULATE UI
 // =====================================================
 async function populateReport(report) {
@@ -73,17 +118,22 @@ async function populateReport(report) {
         <div class="ai-result-item">
             <strong>Confidence:</strong>
             ${report.confidence !== null
-                ? (report.confidence * 100).toFixed(2) + '%'
-                : 'N/A'}
+            ? (report.confidence * 100).toFixed(2) + '%'
+            : 'N/A'}
         </div>
         <div class="ai-result-item">
             <strong>Severity:</strong> ${report.severity || 'N/A'}
         </div>
     `;
 
-    // LOCATION
-    document.getElementById('mapCoords').textContent =
-        `Lat: ${report.latitude ?? 'N/A'}, Lng: ${report.longitude ?? 'N/A'}`;
+    // LOCATION + MAP
+    if (report.latitude != null && report.longitude != null) {
+        loadMap(report.latitude, report.longitude);
+    } else {
+        document.getElementById('mapCoords').textContent =
+            'Location not available';
+    }
+
 
     // REPORT INFO
     document.getElementById('reportInfo').innerHTML = `

@@ -126,7 +126,7 @@ function renderReportsTable() {
                 <td>-</td> <!-- Date -->
                 <td>
                     <div class="table-actions">
-                        <button class="btn btn-primary" onclick="viewReport('${report.id}')">View</button>
+                        <button class="btn btn-primary" onclick="openPanel('${encodeURIComponent(JSON.stringify(report))}')">View</button>
                         ${report.status === 'submitted' ? `
                             <button class="btn btn-success" onclick="verifyReport('${report.id}')">Verify</button>
                         ` : ''}
@@ -144,10 +144,10 @@ function renderReportsTable() {
 window.applyFilters = applyFilters;
 window.clearFilters = clearFilters;
 window.viewReport = (id) => {
-    sessionStorage.setItem('selectedReportId', id);
-    // TODO: Navigate to detail view
-    alert('View details for: ' + id);
+    const report = allOfficerReports.find(r => r.id === id);
+    if (report) openPanel(encodeURIComponent(JSON.stringify(report)));
 };
+
 window.verifyReport = (id) => {
     sessionStorage.setItem('selectedReportId', id);
     window.location.href = 'verification.html';
@@ -156,3 +156,59 @@ window.assignReport = (id) => {
     sessionStorage.setItem('selectedReportId', id);
     window.location.href = 'assignment.html';
 };
+
+// --- Slide Panel Logic ---
+let panelMap = null;
+let panelMarker = null;
+
+function openPanel(reportJson) {
+    const report = JSON.parse(decodeURIComponent(reportJson));
+
+    // 1. Fill Text Data
+    document.getElementById("panelDamageType").textContent = report.damage_type || "Unknown";
+    document.getElementById("panelConfidence").textContent = 
+        report.confidence ? (report.confidence * 100).toFixed(1) + "%" : "N/A";
+    document.getElementById("panelSeverity").textContent = report.severity || "Pending";
+    document.getElementById("panelStatus").textContent = report.status || "Submitted";
+
+    // 2. Open the Panel
+    document.getElementById("reportPanel").classList.add("open");
+
+    // 3. Load Map (Wait for transition to finish)
+    setTimeout(() => {
+        loadPanelMap(report.latitude, report.longitude);
+    }, 300);
+}
+
+function closePanel() {
+    document.getElementById("reportPanel").classList.remove("open");
+}
+
+function loadPanelMap(lat, lng) {
+    if (!lat || !lng) {
+        console.error("No coordinates available for this report.");
+        return;
+    }
+
+    if (!panelMap) {
+        // Initialize map if it doesn't exist
+        panelMap = L.map("panelMap").setView([lat, lng], 15);
+
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            attribution: "© OpenStreetMap"
+        }).addTo(panelMap);
+
+        panelMarker = L.marker([lat, lng]).addTo(panelMap);
+    } else {
+        // Move existing map and marker
+        panelMap.setView([lat, lng], 15);
+        panelMarker.setLatLng([lat, lng]);
+    }
+
+    // Force Leaflet to recalculate size (prevents gray tiles)
+    setTimeout(() => panelMap.invalidateSize(), 200);
+}
+
+// Expose open/close to window for HTML onclicks
+window.openPanel = openPanel;
+window.closePanel = closePanel;

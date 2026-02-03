@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Officer Dashboard - Road Damage Detection</title>
     <link rel="stylesheet" href="../shared/styles.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
     <link rel="stylesheet" href="styles/dashboard.css">
 </head>
 
@@ -116,9 +118,30 @@
         </div>
     </div>
 
+    <!-- Slide Panel -->
+    <div id="reportPanel" class="slide-panel">
+        <div class="panel-header">
+            <h2>Report Details</h2>
+            <button class="close-btn" onclick="closePanel()">✕</button>
+        </div>
+
+        <div class="panel-content">
+            <p><strong>Damage Type:</strong> <span id="panelDamageType"></span></p>
+            <p><strong>Confidence:</strong> <span id="panelConfidence"></span></p>
+            <p><strong>Severity:</strong> <span id="panelSeverity"></span></p>
+            <p><strong>Status:</strong> <span id="panelStatus"></span></p>
+
+            <h3>Location</h3>
+            <div id="panelMap" style="height: 250px; border-radius: 8px;"></div>
+        </div>
+    </div>
+
+
     <script src="../shared/navigation.js"></script>
     <script src="../shared/modal.js"></script>
     <script src="../shared/auth.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <script src="scripts/dashboard.js"></script>
 </body>
 

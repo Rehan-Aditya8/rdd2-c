@@ -18,24 +18,36 @@ function initReportForm() {
     if ("geolocation" in navigator) {
         locationDisplay.textContent = "Acquiring GPS...";
         navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const { latitude, longitude } = position.coords;
-                locationDisplay.textContent =
-                    `Lat: ${latitude.toFixed(5)}, Lng: ${longitude.toFixed(5)}`;
-                locationDisplay.dataset.lat = latitude;
-                locationDisplay.dataset.lng = longitude;
-            },
-            () => {
-                locationDisplay.textContent = "Location permission REQUIRED";
-                locationDisplay.dataset.lat = "";
-                locationDisplay.dataset.lng = "";
-                showAlert(
-                    "Location Required",
-                    "Please enable GPS to submit a damage report.",
-                    "warning"
-                );
-            }
+    (position) => {
+        const { latitude, longitude, accuracy } = position.coords;
+
+        console.log("GPS Accuracy (meters):", accuracy);
+
+        locationDisplay.textContent =
+            `Lat: ${latitude.toFixed(5)}, Lng: ${longitude.toFixed(5)}`;
+
+        locationDisplay.dataset.lat = latitude;
+        locationDisplay.dataset.lng = longitude;
+        locationDisplay.dataset.accuracy = accuracy;
+    },
+    (error) => {
+        locationDisplay.textContent = "Location permission REQUIRED";
+        locationDisplay.dataset.lat = "";
+        locationDisplay.dataset.lng = "";
+
+        showAlert(
+            "Location Required",
+            "Please enable GPS and allow precise location.",
+            "warning"
         );
+    },
+    {
+        enableHighAccuracy: true,   // 🔥 KEY FIX
+        timeout: 15000,
+        maximumAge: 0              // 🔥 NO cached location
+    }
+);
+
     } else {
         locationDisplay.textContent = "Geolocation not supported";
     }
@@ -77,16 +89,10 @@ async function handleFileSelect(event) {
     };
     reader.readAsDataURL(file);
 
-    // Ensure location exists
-    const locDisplay = document.getElementById('locationDisplay');
-    if (!locDisplay.dataset.lat || !locDisplay.dataset.lng) {
-        showAlert("Location Required", "Enable GPS before uploading image.", "error");
-        return;
-    }
-
     // Run ML detection
     await runDetection();
 }
+
 
 /**
  * Run ML detection BEFORE submit
