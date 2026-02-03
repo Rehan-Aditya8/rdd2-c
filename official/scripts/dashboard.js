@@ -149,8 +149,7 @@ window.viewReport = (id) => {
 };
 
 window.verifyReport = (id) => {
-    sessionStorage.setItem('selectedReportId', id);
-    window.location.href = 'verification.html';
+    window.location.href = `verification.html?id=${id}`;
 };
 window.assignReport = (id) => {
     sessionStorage.setItem('selectedReportId', id);
@@ -166,7 +165,7 @@ function openPanel(reportJson) {
 
     // 1. Fill Text Data
     document.getElementById("panelDamageType").textContent = report.damage_type || "Unknown";
-    document.getElementById("panelConfidence").textContent = 
+    document.getElementById("panelConfidence").textContent =
         report.confidence ? (report.confidence * 100).toFixed(1) + "%" : "N/A";
     document.getElementById("panelSeverity").textContent = report.severity || "Pending";
     document.getElementById("panelStatus").textContent = report.status || "Submitted";

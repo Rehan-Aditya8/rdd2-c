@@ -7,26 +7,74 @@ let mapInstance = null;
 // =====================================================
 // INIT
 // =====================================================
+// =====================================================
+// INIT
+// =====================================================
 document.addEventListener('DOMContentLoaded', () => {
     Auth.requireRole('official');
 
     const params = new URLSearchParams(window.location.search);
     const reportId = params.get('id');
 
-    if (!reportId) {
-        showModal(
-            'Invalid Access',
-            'Please select a report from Work Reports to verify.'
+    if (reportId) {
+        // DETAIL MODE
+        window.currentReportId = reportId;
+        document.getElementById('verificationDetail').style.display = 'block';
+        document.getElementById('verificationList').style.display = 'none';
+        loadReport();
+    } else {
+        // LIST MODE
+        document.getElementById('verificationDetail').style.display = 'none';
+        document.getElementById('verificationList').style.display = 'block';
+        loadVerificationList();
+    }
+});
+
+// =====================================================
+// LIST MODE LOGIC
+// =====================================================
+async function loadVerificationList() {
+    try {
+        const response = await Auth.fetchWithAuth('/api/official/reports');
+        if (!response.ok) throw new Error('Failed to fetch reports');
+
+        const allReports = await response.json();
+        // Filter for reports that need verification (status 'submitted' or 'PENDING')
+        const pendingReports = allReports.filter(r =>
+            r.status === 'submitted' || r.status === 'PENDING'
         );
-        setTimeout(() => {
-            window.location.href = 'work-reports.html';
-        }, 1200);
+
+        renderVerificationTable(pendingReports);
+    } catch (error) {
+        console.error('Load Error:', error);
+        document.getElementById('verificationTableBody').innerHTML =
+            `<tr><td colspan="6" style="text-align:center; color:red;">Error loading reports: ${error.message}</td></tr>`;
+    }
+}
+
+function renderVerificationTable(reports) {
+    const tbody = document.getElementById('verificationTableBody');
+
+    if (reports.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;">No pending reports to verify.</td></tr>';
         return;
     }
 
-    window.currentReportId = reportId;
-    loadReport();
-});
+    tbody.innerHTML = reports.map(report => `
+        <tr>
+            <td><strong>${report.id.substring(0, 8)}...</strong></td>
+            <td>${report.location || 'Unknown'}</td>
+            <td>${report.created_at ? new Date(report.created_at).toLocaleDateString() : 'N/A'}</td>
+            <td>${report.damage_type || 'N/A'}</td>
+            <td><span class="status-chip severity-${(report.severity || 'low').toLowerCase()}">${report.severity || 'Low'}</span></td>
+            <td>
+                <button class="btn btn-success btn-sm" onclick="window.location.href='verification.html?id=${report.id}'">
+                    Verify
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
 
 // =====================================================
 // LOAD REPORT DATA
@@ -172,7 +220,8 @@ async function submitVerification(status) {
         showModal('Success', `Report ${status} successfully`, 'success');
 
         setTimeout(() => {
-            window.location.href = 'work-reports.html';
+            // Redirect back to verification list
+            window.location.href = 'verification.html';
         }, 1500);
 
     } catch (error) {

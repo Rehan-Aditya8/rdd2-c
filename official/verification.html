@@ -37,7 +37,30 @@
 
     <!-- MAIN CONTENT -->
     <div class="container">
-        <div class="verification-container">
+        <!-- Reports List Container (Shown when NO ID provided) -->
+        <div id="verificationList" class="container" style="display: none;">
+            <h2>Pending Verification</h2>
+            <div class="table-container">
+                <table class="reports-table">
+                    <thead>
+                        <tr>
+                            <th>Report ID</th>
+                            <th>Location</th>
+                            <th>Date</th>
+                            <th>Damage Type</th>
+                            <th>Severity</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="verificationTableBody">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Verification Detail Container (Shown when ID provided) -->
+        <div id="verificationDetail" class="verification-container" style="display: none;">
 
             <!-- LEFT: MEDIA -->
             <div class="media-section">
@@ -60,7 +83,12 @@
 
             <!-- RIGHT: ACTIONS -->
             <div class="action-panel">
-                <h2>Report Information</h2>
+                <div class="panel-header-row"
+                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h2>Report Information</h2>
+                    <button class="btn btn-secondary btn-sm" onclick="window.location.href='verification.html'">Back to
+                        List</button>
+                </div>
                 <div class="report-info" id="reportInfo"></div>
 
                 <h2>Verification</h2>

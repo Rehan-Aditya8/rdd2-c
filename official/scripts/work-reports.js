@@ -84,12 +84,7 @@ function renderTable() {
                     View
                 </button>
 
-                ${(report.status === 'submitted' || report.status === 'PENDING')
-            ? `<button class="btn btn-success btn-sm"
-                        onclick="goToVerification('${report.id}')">
-                        Verify
-                    </button>`
-            : ''}
+
 
                 ${report.status === 'approved'
             ? `<button class="btn btn-warning btn-sm"
@@ -146,17 +141,12 @@ function openSidePanel(reportId) {
     `;
 
     document.getElementById('panelFooter').innerHTML =
-        (report.status === 'submitted' || report.status === 'PENDING')
-            ? `<button class="btn btn-success"
-                   onclick="goToVerification('${report.id}')">
-                   Verify
+        (report.status === 'approved')
+            ? `<button class="btn btn-warning"
+                   onclick="window.location.href='assignment.html?id=${report.id}'">
+                   Assign Work
                </button>`
-            : (report.status === 'approved')
-                ? `<button class="btn btn-warning"
-                       onclick="window.location.href='assignment.html?id=${report.id}'">
-                       Assign Work
-                   </button>`
-                : `<button class="btn btn-secondary"
+            : `<button class="btn btn-secondary"
                    onclick="closeSidePanel()">Close</button>`;
 
     document.getElementById('sidePanel').classList.add('open');
