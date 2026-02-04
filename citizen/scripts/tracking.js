@@ -7,106 +7,98 @@ let allReportsData = [];
 let currentReport = null;
 
 /**
+/**
  * Initialize tracking page
  */
-// Fetch reports from API
-try {
-    const response = await Auth.fetchWithAuth('/api/citizen/reports');
-    if (response.ok) {
-        const apiData = await response.json();
+async function initTracking() {
+    // Fetch reports from API
+    try {
+        const response = await Auth.fetchWithAuth('/api/citizen/reports');
+        if (response.ok) {
+            const apiData = await response.json();
 
-        // Transform API data to frontend model
-        allReportsData = apiData.map(r => {
-            // Determine timeline state based on status
-            const steps = ['submitted', 'verified', 'assigned', 'in-progress', 'resolved'];
-            const labels = ['Reported', 'Verified', 'Assigned', 'In Progress', 'Completed'];
+            // Transform API data to frontend model
+            allReportsData = apiData.map(r => {
+                // Determine timeline state based on status
+                const steps = ['submitted', 'approved', 'assigned', 'in-progress', 'resolved'];
+                const labels = ['Reported', 'Verified', 'Assigned', 'In Progress', 'Completed'];
 
-            let currentStageIndex = steps.indexOf(r.status);
-            if (currentStageIndex === -1 && r.status === 'rejected') currentStageIndex = 0; // Treat rejected as just reported for now
-            if (currentStageIndex === -1) currentStageIndex = 0;
+                let currentStageIndex = steps.indexOf(r.status);
+                if (currentStageIndex === -1 && r.status === 'rejected') currentStageIndex = 0; // Treat rejected as just reported for now
+                if (currentStageIndex === -1) currentStageIndex = 0;
 
-            const timeline = labels.map((label, idx) => ({
-                step: label,
-                date: idx <= currentStageIndex ? (idx === 0 ? new Date(r.created_at).toLocaleString() : 'Done') : null,
-                completed: idx < currentStageIndex,
-                active: idx === currentStageIndex
-            }));
+                const timeline = labels.map((label, idx) => ({
+                    step: label,
+                    date: idx <= currentStageIndex ? (idx === 0 ? new Date(r.created_at).toLocaleString() : 'Done') : null,
+                    completed: idx < currentStageIndex,
+                    active: idx === currentStageIndex
+                }));
 
-            return {
-                id: r.id,
-                location: r.location,
-                date: new Date(r.created_at).toLocaleDateString(),
-                status: r.status,
-                statusText: r.status.charAt(0).toUpperCase() + r.status.slice(1),
-                image: `/api/files/images/${r.id}.jpg`, // Assumption: Backend image path logic
-                department: {
-                    name: 'Public Works Department',
-                    contact: 'help@pwd.gov',
-                    phone: '123-456-7890'
-                },
-                timeline: timeline,
-                repairPhotos: []
-            };
-        });
+                return {
+                    id: r.id,
+                    location: r.location,
+                    date: new Date(r.created_at).toLocaleDateString(),
+                    status: r.status,
+                    statusText: r.status.charAt(0).toUpperCase() + r.status.slice(1),
+                    image: r.image_url,
+                    department: {
+                        name: 'Public Works Department',
+                        contact: 'help@pwd.gov',
+                        phone: '12345 67899'
+                    },
+                    timeline: timeline,
+                    repairPhotos: [] // Populate if available from API
+                };
+            });
+        }
+    } catch (e) {
+        console.error("Failed to load reports", e);
     }
-} catch (e) {
-    console.error("Failed to load reports", e);
+
+    // Render all reports table
+    renderAllReportsTable();
+
+    // Check if a report was selected from dashboard
+    const selectedReportId = sessionStorage.getItem('selectedReportId');
+    if (selectedReportId) {
+        selectReport(selectedReportId);
+        sessionStorage.removeItem('selectedReportId');
+    }
 }
-
-// Populate report selector
-const selector = document.getElementById('reportSelector');
-allReportsData.forEach(report => {
-    const option = document.createElement('option');
-    option.value = report.id;
-    option.textContent = `${report.id} - ${report.location} (${report.statusText})`;
-    selector.appendChild(option);
-});
-
-// Check if a report was selected from dashboard
-const selectedReportId = sessionStorage.getItem('selectedReportId');
-if (selectedReportId) {
-    selector.value = selectedReportId;
-    loadReportDetails();
-    sessionStorage.removeItem('selectedReportId');
-}
-
-// Render all reports table
-renderAllReportsTable();
 
 /**
  * Load report details
  */
 function loadReportDetails() {
-    const reportId = document.getElementById('reportSelector').value;
-    if (!reportId) {
-        document.getElementById('reportDetails').style.display = 'none';
-        return;
-    }
-
-    currentReport = allReportsData.find(r => r.id === reportId);
     if (!currentReport) return;
 
-    // Show report details section
+    // Toggle views
+    document.getElementById('reportsList').style.display = 'none';
     document.getElementById('reportDetails').style.display = 'block';
 
     // Render timeline
     renderTimeline();
 
-    // Set report image
+    // Set report image (Before)
     document.getElementById('reportImage').src = currentReport.image;
+
+    // Set After image placehoder
+    const afterContainer = document.getElementById('afterImageContainer');
+    if (['resolved', 'completed'].includes(currentReport.status) && currentReport.repairPhotos && currentReport.repairPhotos.length > 0) {
+        // Assume first repair photo for now
+        afterContainer.innerHTML = `<img src="${currentReport.repairPhotos[0].url}" class="image-preview" style="margin-top:0; height: 100%; object-fit: cover;">`;
+    } else {
+        afterContainer.innerHTML = 'Repair Pending';
+    }
 
     // Set department info
     renderDepartmentInfo();
 
-    // Show/hide repair photos
-    if (currentReport.status === 'completed' && currentReport.repairPhotos.length > 0) {
-        document.getElementById('repairPhotosSection').style.display = 'block';
-        document.getElementById('viewEvidenceBtn').style.display = 'inline-block';
-        renderRepairPhotos();
-    } else {
-        document.getElementById('repairPhotosSection').style.display = 'none';
-        document.getElementById('viewEvidenceBtn').style.display = 'none';
-    }
+    // Hide old repair photos section logic for now, using the side-by-side view instead
+    const oldRepairSection = document.getElementById('repairPhotosSection');
+    if (oldRepairSection) oldRepairSection.style.display = 'none';
+    const viewEvidenceBtn = document.getElementById('viewEvidenceBtn');
+    if (viewEvidenceBtn) viewEvidenceBtn.style.display = 'none';
 }
 
 /**
@@ -162,11 +154,13 @@ function renderRepairPhotos() {
 }
 
 /**
- * View full details
+/**
+ * Close report details
  */
-function viewFullDetails() {
-    if (!currentReport) return;
-    showAlert('Report Details', `Full Details for ${currentReport.id}:\n\nLocation: ${currentReport.location}\nStatus: ${currentReport.statusText}\nDate: ${currentReport.date}\n\nDepartment: ${currentReport.department.name}`, 'info');
+function closeReportDetails() {
+    document.getElementById('reportDetails').style.display = 'none';
+    document.getElementById('reportsList').style.display = 'block';
+    currentReport = null;
 }
 
 /**
@@ -197,12 +191,16 @@ function renderAllReportsTable() {
 }
 
 /**
- * Select report from table
+ * Select report by ID
  */
 function selectReport(reportId) {
-    document.getElementById('reportSelector').value = reportId;
-    loadReportDetails();
-    document.getElementById('reportSelector').scrollIntoView({ behavior: 'smooth' });
+    // Ensure loose comparison for ID (string vs number)
+    currentReport = allReportsData.find(r => String(r.id) === String(reportId));
+    if (currentReport) {
+        loadReportDetails();
+    } else {
+        console.warn(`Report ${reportId} not found in loaded data`);
+    }
 }
 
 // Initialize when page loads

@@ -42,7 +42,8 @@ function renderRecentReports(reports) {
         // Map backend status to frontend classes/text
         const statusMap = {
             'submitted': { class: 'reported', text: 'Reported' },
-            'verified': { class: 'in-progress', text: 'Verified' },
+            'approved': { class: 'reported', text: 'Verified' },
+            'verified': { class: 'reported', text: 'Verified' }, // Fallback
             'assigned': { class: 'in-progress', text: 'Assigned' },
             'in-progress': { class: 'in-progress', text: 'In Progress' },
             'resolved': { class: 'completed', text: 'Completed' },
@@ -75,16 +76,21 @@ function renderRecentReports(reports) {
  * Update Status Summary Chips
  */
 function updateStatusSummary(reports) {
-    const reported = reports.filter(r => r.status === 'submitted').length;
-    const inProgress = reports.filter(r => ['verified', 'assigned', 'in-progress'].includes(r.status)).length;
+    // Include 'approved' (Verified) in Reported count as requested
+    const reported = reports.filter(r => ['submitted', 'approved'].includes(r.status)).length;
+    const inProgress = reports.filter(r => ['assigned', 'in-progress'].includes(r.status)).length;
     const completed = reports.filter(r => ['resolved', 'rejected'].includes(r.status)).length;
 
-    const container = document.querySelector('.status-chips-container');
-    container.innerHTML = `
-        <span class="status-chip status-reported">Reported: ${reported}</span>
-        <span class="status-chip status-in-progress">In Progress: ${inProgress}</span>
-        <span class="status-chip status-completed">Completed: ${completed}</span>
-    `;
+    // Update counts by ID to preserve HTML structure
+    if (document.getElementById('reportedCount')) {
+        document.getElementById('reportedCount').textContent = reported;
+    }
+    if (document.getElementById('inProgressCount')) {
+        document.getElementById('inProgressCount').textContent = inProgress;
+    }
+    if (document.getElementById('completedCount')) {
+        document.getElementById('completedCount').textContent = completed;
+    }
 }
 
 /**

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <link rel="stylesheet" href="../shared/styles.css">
     <link rel="stylesheet" href="styles/tracking.css">
 </head>
+
 <body>
     <!-- Top Bar -->
     <div class="top-bar">
@@ -25,12 +27,7 @@
     <!-- Main Content -->
     <div class="container">
         <!-- Report Selector -->
-        <div class="report-selector">
-            <label class="form-label">Select Report to Track:</label>
-            <select class="form-select" id="reportSelector" onchange="loadReportDetails()">
-                <option value="">-- Select a Report --</option>
-            </select>
-        </div>
+
 
         <!-- Report Details -->
         <div id="reportDetails" style="display: none;">
@@ -43,18 +40,32 @@
             </div>
 
             <!-- Report Image -->
-            <div class="report-image-section">
+            <!-- Report Image -->
+            <!-- <div class="report-image-section">
                 <h2>Reported Damage</h2>
-                <img id="reportImage" class="image-preview" alt="Reported damage">
-            </div>
+                <div class="images-container" style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                    <div class="image-box" style="flex: 1; min-width: 250px;">
+                        <h3 style="color: #ccc; margin-bottom: 0.5rem;">Before</h3>
+                        <img id="reportImage" class="image-preview" alt="Reported damage" style="margin-top: 0;">
+                    </div>
+                    <div class="image-box" style="flex: 1; min-width: 250px;">
+                        <h3 style="color: #ccc; margin-bottom: 0.5rem;">After</h3>
+                         Placeholder or After Image -->
+            <!--<div id="afterImageContainer" class="image-preview"
+                            style="margin-top: 0; background: #1a1a2e; border: 1px dashed #444; height: 300px; display: flex; align-items: center; justify-content: center; color: #666;">
+                            Repair Pending
+                        </div>
+                    </div>
+                </div>
+            </div> -->
 
             <!-- Assigned Department -->
-            <div class="department-section">
-                <h2>Assigned Department</h2>
-                <div class="department-info" id="departmentInfo">
-                    <!-- Department info will be populated by JavaScript -->
-                </div>
-            </div>
+            <!--<div class="department-section">
+                <h2>Assigned Department</h2> 
+                <div class="department-info" id="departmentInfo"> -->
+            <!-- Department info will be populated by JavaScript -->
+            <!--   </div>
+            </div> -->
 
             <!-- Repair Photos (if completed) -->
             <div class="repair-photos-section" id="repairPhotosSection" style="display: none;">
@@ -65,16 +76,15 @@
             </div>
 
             <!-- Actions -->
+            <!-- Actions -->
             <div class="tracking-actions">
-                <button class="btn btn-primary" onclick="viewFullDetails()">View Full Details</button>
-                <button class="btn btn-secondary" id="viewEvidenceBtn" style="display: none;" onclick="viewEvidence()">
-                    View Completion Evidence
-                </button>
+                <button class="btn btn-secondary" onclick="closeReportDetails()">Close Report</button>
             </div>
         </div>
 
         <!-- All Reports List -->
-        <div class="all-reports-section">
+        <!-- All Reports List -->
+        <div id="reportsList" class="all-reports-section">
             <h2>All Your Reports</h2>
             <div class="reports-table-container">
                 <table>
@@ -97,6 +107,8 @@
 
     <script src="../shared/navigation.js"></script>
     <script src="../shared/modal.js"></script>
+    <script src="../shared/auth.js"></script>
     <script src="scripts/tracking.js"></script>
 </body>
+
 </html>
