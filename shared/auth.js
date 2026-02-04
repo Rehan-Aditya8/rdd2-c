@@ -73,10 +73,10 @@ const Auth = {
     // =========================
     // AUTHORIZED FETCH
     // =========================
-    async fetchWithAuth(url, options = {}) {
+    async fetchWithAuth(url, options = {}, retries = 1) {
         const token = this.getToken();
         if (!token) {
-            throw new Error('No token found');
+            throw new Error('No token found. Please log in again.');
         }
 
         const headers = {
@@ -84,13 +84,24 @@ const Auth = {
             ...options.headers
         };
 
-        const response = await fetch(url, { ...options, headers });
+        try {
+            const response = await fetch(url, { ...options, headers });
 
-        if (response.status === 401 || response.status === 403) {
-            this.logout();
+            if (response.status === 401 || response.status === 403) {
+                console.warn('Session expired or unauthorized');
+                this.logout();
+                return response;
+            }
+
+            return response;
+        } catch (error) {
+            if (retries > 0) {
+                console.warn(`Fetch failed, retrying... (${retries} left)`);
+                return this.fetchWithAuth(url, options, retries - 1);
+            }
+            console.error('Fetch error:', error);
+            throw error;
         }
-
-        return response;
     }
 };
 

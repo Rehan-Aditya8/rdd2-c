@@ -44,6 +44,11 @@ class Config:
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB
 
     # Create upload directories automatically (DEV SAFE)
-    os.makedirs(os.path.join(UPLOAD_FOLDER, 'images'), exist_ok=True)
-    os.makedirs(os.path.join(UPLOAD_FOLDER, 'videos'), exist_ok=True)
-    os.makedirs(os.path.join(UPLOAD_FOLDER, 'docs'), exist_ok=True)
+    try:
+        os.makedirs(os.path.join(UPLOAD_FOLDER, 'images'), exist_ok=True)
+        os.makedirs(os.path.join(UPLOAD_FOLDER, 'videos'), exist_ok=True)
+        os.makedirs(os.path.join(UPLOAD_FOLDER, 'docs'), exist_ok=True)
+        os.makedirs(os.path.join(UPLOAD_FOLDER, 'work_notices'), exist_ok=True)
+    except Exception as e:
+        print(f"Warning: Failed to create upload directories: {e}")
+

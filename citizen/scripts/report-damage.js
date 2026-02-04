@@ -163,7 +163,7 @@ async function submitReport() {
 
     const submitBtn = document.getElementById('submitBtn');
     submitBtn.disabled = true;
-    submitBtn.textContent = "Submitting...";
+    submitBtn.textContent = "Submitted";
 
     const locDisplay = document.getElementById('locationDisplay');
 

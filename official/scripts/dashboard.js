@@ -13,6 +13,11 @@ document.addEventListener('DOMContentLoaded', async () => {
  * Fetch reports from API
  */
 async function loadReports() {
+    const tbody = document.getElementById('reportsTableBody');
+    if (tbody) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 2rem;"><div class="spinner"></div> Loading reports...</td></tr>';
+    }
+
     try {
         const response = await Auth.fetchWithAuth('/api/official/reports');
         if (!response.ok) throw new Error('Failed to fetch reports');
@@ -23,6 +28,9 @@ async function loadReports() {
         initDashboard();
     } catch (error) {
         console.error('Load Error:', error);
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 2rem; color:red;">Error loading reports: ${error.message}</td></tr>`;
+        }
     }
 }
 
@@ -108,6 +116,7 @@ function renderReportsTable() {
 
         if (report.status === 'submitted') { statusClass = 'pending'; statusText = 'Pending Verification'; }
         else if (report.status === 'verified') { statusClass = 'verified'; statusText = 'Verified'; }
+        else if (report.status === 'assigned') { statusClass = 'in-progress'; statusText = 'Assigned'; }
         else if (report.status === 'in-progress') { statusClass = 'in-progress'; statusText = 'In Progress'; }
         else if (report.status === 'resolved') { statusClass = 'completed'; statusText = 'Resolved'; }
         else if (report.status === 'rejected') { statusClass = 'completed'; statusText = 'Rejected'; }

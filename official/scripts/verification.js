@@ -34,6 +34,11 @@ document.addEventListener('DOMContentLoaded', () => {
 // LIST MODE LOGIC
 // =====================================================
 async function loadVerificationList() {
+    const tbody = document.getElementById('verificationTableBody');
+    if (tbody) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;"><div class="spinner"></div> Loading pending reports...</td></tr>';
+    }
+
     try {
         const response = await Auth.fetchWithAuth('/api/official/reports');
         if (!response.ok) throw new Error('Failed to fetch reports');
@@ -47,8 +52,10 @@ async function loadVerificationList() {
         renderVerificationTable(pendingReports);
     } catch (error) {
         console.error('Load Error:', error);
-        document.getElementById('verificationTableBody').innerHTML =
-            `<tr><td colspan="6" style="text-align:center; color:red;">Error loading reports: ${error.message}</td></tr>`;
+        if (tbody) {
+            tbody.innerHTML =
+                `<tr><td colspan="6" style="text-align:center; color:red; padding: 2rem;">Error loading reports: ${error.message}</td></tr>`;
+        }
     }
 }
 
@@ -80,6 +87,11 @@ function renderVerificationTable(reports) {
 // LOAD REPORT DATA
 // =====================================================
 async function loadReport() {
+    const infoContainer = document.getElementById('reportInfo');
+    if (infoContainer) {
+        infoContainer.innerHTML = '<div class="spinner"></div> Loading report details...';
+    }
+
     try {
         const response = await Auth.fetchWithAuth(
             `/api/official/reports/${window.currentReportId}`
@@ -94,6 +106,9 @@ async function loadReport() {
 
     } catch (error) {
         console.error(error);
+        if (infoContainer) {
+            infoContainer.innerHTML = `<div style="color:red;">Error: ${error.message}</div>`;
+        }
         showModal('Error', error.message);
     }
 }
