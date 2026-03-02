@@ -1,0 +1,99 @@
+/* Theme Variables */
+:root {
+    /* Updated Dark Theme (User Palette) */
+    --bg-color: #000000;
+    --surface-color: #0e2525;
+    --surface-hover: #132525;
+    --text-primary: #ffffff;
+    --text-secondary: #ffffff;
+    --text-muted: #abd1c2;
+    --primary-color: #93B1A6;
+    --primary-hover: #b5cdc5;
+    --border-color: #5d9c84;
+    --header-bg: linear-gradient(135deg, #061118 0%, #133d3d 100%);
+    --nav-bg: #010203;
+    --card-bg: #0f2929;
+    --input-bg: #0c2424;
+    --shadow-color: rgba(0, 0, 0, 0.7);
+    --accent-glow: rgba(147, 177, 166, 0.3);
+}
+
+/* Light Theme Overrides (User Palette) */
+body.light-theme {
+    --bg-color: #8abec9;
+    --surface-color: #A1E3F9;
+    --surface-hover: #7acede;
+    --text-primary: #062342;
+    --text-secondary: #0b3b6e;
+    --text-muted: #0a3b6e;
+    --primary-color: #0c2c4e;
+    --primary-hover: #07223f;
+    --border-color: #00070e;
+    --header-bg: linear-gradient(135deg, #1a3755 0%, #578FCA 100%);
+    --nav-bg: #A1E3F9;
+    --card-bg: #ffffff5e;
+    --input-bg: #d1f8ef6c;
+    --shadow-color: rgba(0, 0, 0, 0.1);
+    --accent-glow: rgba(52, 99, 150, 0.2);
+}
+
+/* Toggle Switch Styles */
+.theme-switch-wrapper {
+    display: flex;
+    align-items: center;
+    margin-right: 15px;
+}
+
+.theme-switch {
+    display: inline-block;
+    height: 24px;
+    position: relative;
+    width: 48px;
+}
+
+.theme-switch input {
+    display: none;
+}
+
+.slider {
+    background-color: #334155;
+    bottom: 0;
+    cursor: pointer;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+    transition: .4s;
+    border-radius: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 5px;
+    font-size: 12px;
+}
+
+.slider:before {
+    background-color: #fff;
+    bottom: 3px;
+    content: "";
+    height: 18px;
+    left: 3px;
+    position: absolute;
+    transition: .4s;
+    width: 18px;
+    border-radius: 50%;
+    z-index: 2;
+}
+
+input:checked+.slider {
+    background-color: #0d6efd;
+}
+
+input:checked+.slider:before {
+    transform: translateX(24px);
+}
+
+.slider .sun,
+.slider .moon {
+    user-select: none;
+}

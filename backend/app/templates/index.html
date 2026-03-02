@@ -6,12 +6,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Work Assignment & Infrastructure Reporting System</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='shared/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='shared/theme.css') }}">
     <style>
         body {
-            background-color: #050510;
+            background-color: var(--bg-color);
             display: flex;
             flex-direction: column;
             min-height: 100vh;
+            color: var(--text-secondary);
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
         .hero-section {
@@ -22,17 +25,17 @@
             justify-content: center;
             padding: 2rem;
             text-align: center;
-            background: radial-gradient(circle at center, #1a1a2e 0%, #050510 100%);
+            background: radial-gradient(circle at center, var(--surface-color) 0%, var(--bg-color) 100%);
         }
 
         .system-title {
             font-size: 2.5rem;
             font-weight: 700;
-            color: #fff;
+            color: var(--text-primary);
             margin-bottom: 0.5rem;
             text-transform: uppercase;
             letter-spacing: 1px;
-            background: linear-gradient(90deg, #fff, #0d6efd);
+            background: linear-gradient(90deg, var(--text-primary), var(--primary-color));
             background-clip: text;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -40,7 +43,7 @@
 
         .system-subtitle {
             font-size: 1.1rem;
-            color: #aaa;
+            color: var(--text-muted);
             margin-bottom: 3rem;
             max-width: 600px;
         }
@@ -55,20 +58,21 @@
         }
 
         .access-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
             border-radius: 16px;
             padding: 2.5rem;
             width: 350px;
             text-align: center;
             transition: all 0.3s ease;
             backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px var(--shadow-color);
         }
 
         .access-card:hover {
             transform: translateY(-5px);
-            border-color: #0d6efd;
-            box-shadow: 0 10px 30px rgba(13, 110, 253, 0.2);
+            border-color: var(--primary-color);
+            box-shadow: 0 10px 30px var(--accent-glow);
         }
 
         .role-icon {
@@ -80,7 +84,7 @@
         .role-title {
             font-size: 1.5rem;
             font-weight: 600;
-            color: #fff;
+            color: var(--text-primary);
             margin-bottom: 1rem;
         }
 
@@ -157,12 +161,24 @@
 <body>
 
     <header
-        style="padding: 1.5rem; background: rgba(0,0,0,0.5); border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center;">
-        <div style="display: flex; align-items: center; gap: 1rem;">
+        style="padding: 1.5rem; background: var(--header-bg); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between;">
+        <div style="flex: 1;"></div>
+        <div style="display: flex; align-items: center; gap: 1rem; flex: 2; justify-content: center;">
             <div
                 style="width: 40px; height: 40px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #000;">
                 🏛️</div>
             <div style="color: #fff; font-weight: 600; letter-spacing: 0.5px;">OFFICIAL MUNICIPAL PORTAL</div>
+        </div>
+        <div class="profile-container" style="flex: 1; display: flex; justify-content: flex-end; align-items: center;">
+            <div class="theme-switch-wrapper" style="margin-right: 0;">
+                <label class="theme-switch" for="checkbox">
+                    <input type="checkbox" id="checkbox" />
+                    <div class="slider">
+                        <span class="sun">☀️</span>
+                        <span class="moon">🌙</span>
+                    </div>
+                </label>
+            </div>
         </div>
     </header>
 
@@ -193,7 +209,7 @@
         </div>
     </div>
 
-    <footer class="main-footer">
+    <footer class="main-footer" style="background: var(--bg-color); border-top: 1px solid var(--border-color);">
         <div class="footer-links">
             <a href="#">Privacy Policy</a>
             <a href="#">Terms of Use</a>
@@ -205,6 +221,14 @@
         </div>
     </footer>
 
+    <script src="{{ url_for('static', filename='shared/navigation.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            if (typeof initTheme === 'function') {
+                initTheme();
+            }
+        });
+    </script>
 </body>
 
 </html>

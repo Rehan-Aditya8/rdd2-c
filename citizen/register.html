@@ -6,23 +6,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Citizen Registration - Road Damage Detection</title>
     <link rel="stylesheet" href="../shared/styles.css">
+    <link rel="stylesheet" href="../shared/theme.css">
     <style>
         body {
             display: flex;
             align-items: center;
             justify-content: center;
             min-height: 100vh;
-            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+            background: var(--bg-color);
+            color: var(--text-secondary);
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
         .login-card {
-            background: #16213e;
+            background: var(--card-bg);
             padding: 2.5rem;
             border-radius: 12px;
             width: 100%;
             max-width: 400px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-            border: 1px solid #1f2940;
+            box-shadow: 0 10px 40px var(--shadow-color);
+            border: 1px solid var(--border-color);
+            position: relative;
         }
 
         .login-header {
@@ -57,6 +61,15 @@
 
 <body>
     <div class="login-card">
+        <div class="theme-switch-wrapper" style="position: absolute; top: 1.5rem; right: 1.5rem; margin-right: 0;">
+            <label class="theme-switch" for="checkbox">
+                <input type="checkbox" id="checkbox" />
+                <div class="slider">
+                    <span class="sun">☀️</span>
+                    <span class="moon">🌙</span>
+                </div>
+            </label>
+        </div>
         <div class="login-header">
             <h1>Create Account</h1>
             <p>Join to report infrastructure issues</p>
@@ -89,9 +102,14 @@
         <a href="/" class="back-link">← Back to Home</a>
     </div>
 
-    <script src="../shared/modal.js"></script>
-    <script src="../shared/auth.js"></script>
+    <script src="../shared/navigation.js"></script>
     <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            if (typeof initTheme === 'function') {
+                initTheme();
+            }
+        });
+
         function togglePasswordVisibility(inputId) {
             const input = document.getElementById(inputId);
             if (input.type === "password") {

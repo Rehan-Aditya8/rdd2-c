@@ -1,9 +1,40 @@
 // Shared Navigation Utilities
 
 /**
+ * Initialize theme from localStorage
+ */
+function initTheme() {
+    const currentTheme = localStorage.getItem('theme') || 'dark';
+    const themeCheckbox = document.getElementById('checkbox');
+
+    if (currentTheme === 'light') {
+        document.body.classList.add('light-theme');
+        if (themeCheckbox) themeCheckbox.checked = true;
+    } else {
+        document.body.classList.remove('light-theme');
+        if (themeCheckbox) themeCheckbox.checked = false;
+    }
+
+    if (themeCheckbox) {
+        themeCheckbox.addEventListener('change', function (e) {
+            if (e.target.checked) {
+                document.body.classList.add('light-theme');
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.body.classList.remove('light-theme');
+                localStorage.setItem('theme', 'dark');
+            }
+        });
+    }
+}
+
+/**
  * Initialize navigation highlighting based on current page
  */
 function initNavigation() {
+    // Apply theme immediately to prevent flash
+    initTheme();
+
     const currentPage = window.location.pathname.split('/').pop();
     const navLinks = document.querySelectorAll('.nav-link');
 
