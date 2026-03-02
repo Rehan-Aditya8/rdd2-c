@@ -61,23 +61,39 @@ function updateKPIs() {
  * Apply filters
  */
 function applyFilters() {
-    // Note: Backend might not return 'sector' yet, so filtering might be limited
-    const sectorFilter = document.getElementById('sectorFilter').value;
+    const startDate = document.getElementById('startDateFilter').value;
+    const endDate = document.getElementById('endDateFilter').value;
     const severityFilter = document.getElementById('severityFilter').value;
     const statusFilter = document.getElementById('statusFilter').value;
 
     filteredReports = allOfficerReports.filter(report => {
-        // const sectorMatch = !sectorFilter || report.sector === sectorFilter; 
-        const sectorMatch = true; // Temporary disable until sector is in DB
         const severityMatch = !severityFilter || (report.severity || '').toLowerCase() === severityFilter;
-        // Map frontend status filter to backend status
+
         let statusMatch = true;
         if (statusFilter) {
             if (statusFilter === 'pending') statusMatch = report.status === 'submitted';
+            else if (statusFilter === 'verified') statusMatch = (report.status === 'verified' || report.status === 'approved');
             else statusMatch = report.status === statusFilter;
         }
 
-        return sectorMatch && severityMatch && statusMatch;
+        let dateMatch = true;
+        if (startDate || endDate) {
+            const reportDate = new Date(report.created_at);
+            reportDate.setHours(0, 0, 0, 0);
+
+            if (startDate) {
+                const sDate = new Date(startDate);
+                sDate.setHours(0, 0, 0, 0);
+                if (reportDate < sDate) dateMatch = false;
+            }
+            if (endDate) {
+                const eDate = new Date(endDate);
+                eDate.setHours(23, 59, 59, 999);
+                if (reportDate > eDate) dateMatch = false;
+            }
+        }
+
+        return severityMatch && statusMatch && dateMatch;
     });
 
     renderReportsTable();
@@ -87,7 +103,8 @@ function applyFilters() {
  * Clear all filters
  */
 function clearFilters() {
-    document.getElementById('sectorFilter').value = '';
+    document.getElementById('startDateFilter').value = '';
+    document.getElementById('endDateFilter').value = '';
     document.getElementById('severityFilter').value = '';
     document.getElementById('statusFilter').value = '';
     filteredReports = [...allOfficerReports];
@@ -115,32 +132,32 @@ function renderReportsTable() {
         let statusText = report.status;
 
         if (report.status === 'submitted') { statusClass = 'pending'; statusText = 'Pending Verification'; }
-        else if (report.status === 'verified') { statusClass = 'verified'; statusText = 'Verified'; }
+        else if (report.status === 'verified' || report.status === 'approved') { statusClass = 'verified'; statusText = 'Verified'; }
         else if (report.status === 'assigned') { statusClass = 'in-progress'; statusText = 'Assigned'; }
         else if (report.status === 'in-progress') { statusClass = 'in-progress'; statusText = 'In Progress'; }
         else if (report.status === 'resolved') { statusClass = 'completed'; statusText = 'Resolved'; }
         else if (report.status === 'rejected') { statusClass = 'completed'; statusText = 'Rejected'; }
 
-        // Mock date if missing (or format robustly)
-        // const dateStr = report.created_at ? new Date(report.created_at).toLocaleDateString() : 'N/A';
-        // The API returns 'image_url' which we can use for View
+        const dateStr = report.created_at ? new Date(report.created_at).toLocaleDateString() : 'N/A';
 
         return `
             <tr>
                 <td>${report.id.substring(0, 8)}...</td>
                 <td>${report.location || 'Unknown'}</td>
-                <td>-</td> <!-- Sector -->
                 <td><span class="status-chip ${severityClass}">${severityText}</span></td>
                 <td><span class="status-chip status-${statusClass}">${statusText}</span></td>
-                <td>-</td> <!-- Date -->
+                <td>${dateStr}</td>
                 <td>
                     <div class="table-actions">
                         <button class="btn btn-primary" onclick="openPanel('${encodeURIComponent(JSON.stringify(report))}')">View</button>
                         ${report.status === 'submitted' ? `
                             <button class="btn btn-success" onclick="verifyReport('${report.id}')">Verify</button>
                         ` : ''}
-                        ${report.status === 'verified' ? `
+                        ${(report.status === 'verified' || report.status === 'approved') ? `
                             <button class="btn btn-secondary" onclick="assignReport('${report.id}')">Assign</button>
+                        ` : ''}
+                        ${(report.status === 'assigned' || report.status === 'in-progress') ? `
+                            <button class="btn btn-info" onclick="monitorReport('${report.id}')">Monitor</button>
                         ` : ''}
                     </div>
                 </td>
@@ -161,8 +178,10 @@ window.verifyReport = (id) => {
     window.location.href = `verification.html?id=${id}`;
 };
 window.assignReport = (id) => {
-    sessionStorage.setItem('selectedReportId', id);
-    window.location.href = 'assignment.html';
+    window.location.href = `assignment.html?id=${id}`;
+};
+window.monitorReport = (id) => {
+    window.location.href = `monitoring.html?id=${id}`;
 };
 
 // --- Slide Panel Logic ---

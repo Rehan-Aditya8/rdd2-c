@@ -143,6 +143,7 @@ body {
     padding: 1rem 2rem;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
     display: flex;
+    justify-content: center;
     gap: 1rem;
     flex-wrap: wrap;
     border-bottom: 1px solid #16213e;

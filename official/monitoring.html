@@ -31,24 +31,21 @@
     <nav class="nav-bar">
         <a href="dashboard.html" class="nav-link">Dashboard</a>
         <a href="work-reports.html" class="nav-link">Work Reports</a>
-        <a href="verification.html" class="nav-link">Verify Reports</a>
-        <a href="assignment.html" class="nav-link">Assign Work</a>
-        <a href="monitoring.html" class="nav-link active">Monitor Work</a>
         <a href="analytics.html" class="nav-link">Analytics</a>
     </nav>
 
     <!-- Main Content -->
     <div class="container">
-        <!-- Work Status Selector -->
-        <div class="work-selector">
-            <label class="form-label">Select Work to Monitor:</label>
-            <select class="form-select" id="workSelector" onchange="loadWorkDetails()">
-                <option value="">-- Select Work Order --</option>
-            </select>
-        </div>
-
         <!-- Work Details -->
         <div id="workDetails" style="display: none;">
+            <!-- Status Timeline -->
+            <div class="status-timeline-section">
+                <h2>Report Status</h2>
+                <div class="timeline" id="statusTimeline">
+                    <!-- Timeline items will be populated by JavaScript -->
+                </div>
+            </div>
+
             <!-- Work Status Indicator -->
             <div class="work-status-section">
                 <h2>Work Status</h2>
@@ -91,17 +88,21 @@
             </div>
         </div>
 
-        <!-- All Active Works -->
-        <div class="active-works-section">
+        <!-- Active Works List (Fallback) -->
+        <div id="activeWorksList" style="display: none;">
             <h2>Active Work Orders</h2>
             <div class="works-grid" id="worksGrid">
-                <!-- Work cards will be populated by JavaScript -->
+                <!-- Will be populated by JS -->
             </div>
         </div>
     </div>
 
+    <!-- For JS compatibility, hidden work selector -->
+    <select id="workSelector" style="display: none;"></select>
+
     <script src="../shared/navigation.js"></script>
     <script src="../shared/modal.js"></script>
+    <script src="../shared/auth.js"></script>
     <script src="scripts/monitoring.js"></script>
 </body>
 

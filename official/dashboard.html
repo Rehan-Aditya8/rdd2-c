@@ -33,9 +33,6 @@
     <nav class="nav-bar">
         <a href="dashboard.html" class="nav-link active">Dashboard</a>
         <a href="work-reports.html" class="nav-link">Work Reports</a>
-        <a href="verification.html" class="nav-link">Verify Reports</a>
-        <a href="assignment.html" class="nav-link">Assign Work</a>
-        <a href="monitoring.html" class="nav-link">Monitor Work</a>
         <a href="analytics.html" class="nav-link">Analytics</a>
     </nav>
 
@@ -43,7 +40,7 @@
     <div class="container">
         <!-- KPI Cards -->
         <div class="kpi-section">
-            <h2>Overview</h2>
+            <h2 style="text-align: center;">Overview</h2>
             <div class="grid grid-4">
                 <div class="kpi-card">
                     <div class="kpi-label">Total Reports</div>
@@ -66,17 +63,15 @@
 
         <!-- Filters -->
         <div class="filters-section">
-            <h2>Filters</h2>
+            <h2 style="text-align: center;">Filters</h2>
             <div class="filters-container">
                 <div class="form-group">
-                    <label class="form-label">Sector</label>
-                    <select class="form-select" id="sectorFilter" onchange="applyFilters()">
-                        <option value="">All Sectors</option>
-                        <option value="sector1">Sector 1</option>
-                        <option value="sector2">Sector 2</option>
-                        <option value="sector3">Sector 3</option>
-                        <option value="sector4">Sector 4</option>
-                    </select>
+                    <label class="form-label">Start Date</label>
+                    <input type="date" class="form-select" id="startDateFilter" onchange="applyFilters()">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">End Date</label>
+                    <input type="date" class="form-select" id="endDateFilter" onchange="applyFilters()">
                 </div>
                 <div class="form-group">
                     <label class="form-label">Severity</label>
@@ -92,11 +87,9 @@
                     <label class="form-label">Status</label>
                     <select class="form-select" id="statusFilter" onchange="applyFilters()">
                         <option value="">All Statuses</option>
-                        <option value="pending">Pending</option>
+                        <option value="pending">Verify Reports</option>
                         <option value="verified">Verified</option>
                         <option value="assigned">Assigned</option>
-                        <option value="in-progress">In Progress</option>
-                        <option value="completed">Completed</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -114,10 +107,9 @@
                         <tr>
                             <th>Report ID</th>
                             <th>Location</th>
-                            <th>Sector</th>
                             <th>Severity</th>
                             <th>Status</th>
-                            <th>Date</th>
+                            <th>Reported Date</th>
                             <th>Actions</th>
                         </tr>
                     </thead>

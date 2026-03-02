@@ -17,71 +17,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const reportId = params.get('id');
 
     if (reportId) {
-        // DETAIL MODE
         window.currentReportId = reportId;
-        document.getElementById('verificationDetail').style.display = 'block';
-        document.getElementById('verificationList').style.display = 'none';
         loadReport();
     } else {
-        // LIST MODE
-        document.getElementById('verificationDetail').style.display = 'none';
-        document.getElementById('verificationList').style.display = 'block';
-        loadVerificationList();
+        window.location.href = 'dashboard.html';
     }
 });
-
-// =====================================================
-// LIST MODE LOGIC
-// =====================================================
-async function loadVerificationList() {
-    const tbody = document.getElementById('verificationTableBody');
-    if (tbody) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;"><div class="spinner"></div> Loading pending reports...</td></tr>';
-    }
-
-    try {
-        const response = await Auth.fetchWithAuth('/api/official/reports');
-        if (!response.ok) throw new Error('Failed to fetch reports');
-
-        const allReports = await response.json();
-        // Filter for reports that need verification (status 'submitted' or 'PENDING')
-        const pendingReports = allReports.filter(r =>
-            r.status === 'submitted' || r.status === 'PENDING'
-        );
-
-        renderVerificationTable(pendingReports);
-    } catch (error) {
-        console.error('Load Error:', error);
-        if (tbody) {
-            tbody.innerHTML =
-                `<tr><td colspan="6" style="text-align:center; color:red; padding: 2rem;">Error loading reports: ${error.message}</td></tr>`;
-        }
-    }
-}
-
-function renderVerificationTable(reports) {
-    const tbody = document.getElementById('verificationTableBody');
-
-    if (reports.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;">No pending reports to verify.</td></tr>';
-        return;
-    }
-
-    tbody.innerHTML = reports.map(report => `
-        <tr>
-            <td><strong>${report.id.substring(0, 8)}...</strong></td>
-            <td>${report.location || 'Unknown'}</td>
-            <td>${report.created_at ? new Date(report.created_at).toLocaleDateString() : 'N/A'}</td>
-            <td>${report.damage_type || 'N/A'}</td>
-            <td><span class="status-chip severity-${(report.severity || 'low').toLowerCase()}">${report.severity || 'Low'}</span></td>
-            <td>
-                <button class="btn btn-success btn-sm" onclick="window.location.href='verification.html?id=${report.id}'">
-                    Verify
-                </button>
-            </td>
-        </tr>
-    `).join('');
-}
 
 // =====================================================
 // LOAD REPORT DATA

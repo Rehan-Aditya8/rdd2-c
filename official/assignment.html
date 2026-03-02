@@ -33,15 +33,18 @@
     <nav class="nav-bar">
         <a href="dashboard.html" class="nav-link">Dashboard</a>
         <a href="work-reports.html" class="nav-link">Work Reports</a>
-        <a href="verification.html" class="nav-link">Verify Reports</a>
-        <a href="assignment.html" class="nav-link active">Assign Work</a>
-        <a href="monitoring.html" class="nav-link">Monitor Work</a>
         <a href="analytics.html" class="nav-link">Analytics</a>
     </nav>
 
     <!-- Main Content -->
     <div class="container">
-        <div class="assignment-container">
+        <!-- Assignment Detail (Shown when ID provided) -->
+        <div id="assignmentDetail" class="assignment-container">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h1>Work Assignment</h1>
+                <button class="btn btn-secondary btn-sm" onclick="window.location.href='assignment.html'">Back to
+                    List</button>
+            </div>
 
             <!-- Report Details -->
             <div class="report-details-section">
@@ -53,7 +56,15 @@
 
             <!-- Assignment Form -->
             <div class="assignment-form-section">
-                <h2>Assign Contractor</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h2>Assign Contractor</h2>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn btn-success btn-sm" onclick="window.location.href='add-contractor.html'">Add
+                            New Contractor</button>
+                        <button id="toggleDeleteBtn" class="btn btn-danger btn-sm" onclick="toggleDeleteMode()">Delete
+                            Contractor</button>
+                    </div>
+                </div>
                 <div class="card">
 
                     <div class="form-group">
@@ -103,7 +114,6 @@
                     Cancel
                 </button>
             </div>
-
         </div>
     </div>
 

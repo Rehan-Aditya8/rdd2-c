@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Contractor - Safe Streets</title>
+    <link rel="stylesheet" href="../shared/styles.css">
+    <style>
+        .form-container {
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: #1a1a2e;
+            border-radius: 12px;
+            border: 1px solid #16213e;
+        }
+
+        .form-title {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: #fff;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <h1>Add New Contractor</h1>
+        <div class="profile-container">
+            <div class="profile-icon" onclick="toggleProfileMenu()">👤</div>
+            <div class="profile-menu" id="profileMenu">
+                <div class="menu-header">
+                    <span class="user-name">Loading...</span>
+                    <span class="user-role">Role</span>
+                </div>
+                <button class="menu-item logout" onclick="confirmLogout()">
+                    <span>🚪</span> Logout
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="nav-bar">
+        <a href="dashboard.html" class="nav-link">Dashboard</a>
+        <a href="assignment.html" class="nav-link">Work Assignment</a>
+        <a href="analytics.html" class="nav-link">Analytics</a>
+    </nav>
+
+    <div class="container">
+        <div class="form-container">
+            <h2 class="form-title">Contractor Details</h2>
+            <form id="addContractorForm">
+                <div class="form-group">
+                    <label class="form-label">Contractor Name</label>
+                    <input type="text" id="contractorName" class="form-select" placeholder="e.g. ABC Road Works"
+                        required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Specialization</label>
+                    <input type="text" id="specialization" class="form-select" placeholder="e.g. Potholes, Resurfacing">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Contact Info</label>
+                    <input type="text" id="contact" class="form-select" placeholder="Email or Phone">
+                </div>
+                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">Add Contractor</button>
+                    <button type="button" class="btn btn-secondary" style="flex: 1;"
+                        onclick="window.history.back()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="../shared/navigation.js"></script>
+    <script src="../shared/auth.js"></script>
+    <script src="../shared/modal.js"></script>
+    <script src="scripts/add-contractor.js"></script>
+</body>
+
+</html>

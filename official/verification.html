@@ -37,41 +37,13 @@
     <nav class="nav-bar">
         <a href="dashboard.html" class="nav-link">Dashboard</a>
         <a href="work-reports.html" class="nav-link">Work Reports</a>
-
-        <!-- ❌ INTENTIONALLY REMOVED -->
-        <!-- Verification must only open with ?id= -->
-
-        <a href="assignment.html" class="nav-link">Assign Work</a>
-        <a href="monitoring.html" class="nav-link">Monitor Work</a>
         <a href="analytics.html" class="nav-link">Analytics</a>
     </nav>
 
     <!-- MAIN CONTENT -->
     <div class="container">
-        <!-- Reports List Container (Shown when NO ID provided) -->
-        <div id="verificationList" class="container" style="display: none;">
-            <h2>Pending Verification</h2>
-            <div class="table-container">
-                <table class="reports-table">
-                    <thead>
-                        <tr>
-                            <th>Report ID</th>
-                            <th>Location</th>
-                            <th>Date</th>
-                            <th>Damage Type</th>
-                            <th>Severity</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="verificationTableBody">
-                        <!-- Populated by JS -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
         <!-- Verification Detail Container (Shown when ID provided) -->
-        <div id="verificationDetail" class="verification-container" style="display: none;">
+        <div id="verificationDetail" class="verification-container">
 
             <!-- LEFT: MEDIA -->
             <div class="media-section">

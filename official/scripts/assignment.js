@@ -1,38 +1,29 @@
 // =====================================================
-// OFFICIAL AUTH GUARD
-// =====================================================
-Auth.requireRole('official');
-
-// =====================================================
-// GET REPORT ID
-// assignment.html?id=12
+// GLOBAL STATE
 // =====================================================
 const params = new URLSearchParams(window.location.search);
 const reportId = params.get('id');
-
-if (!reportId) {
-    showModal('Error', 'No approved report selected');
-    throw new Error('Missing report ID');
-}
-
-// =====================================================
-// GLOBAL STATE
-// =====================================================
 let reportData = null;
 let contractors = [];
 
 // =====================================================
-// LOAD INITIAL DATA
+// INIT
 // =====================================================
 async function initAssignment() {
-    try {
-        await loadReport();
-        await loadContractors();
-        setDefaultDate();
-        bindPreviewUpdates();
-        updatePreview();
-    } catch (err) {
-        showModal('Error', err.message);
+    Auth.requireRole('official');
+
+    if (reportId) {
+        try {
+            await loadReport();
+            await loadContractors();
+            setDefaultDate();
+            bindPreviewUpdates();
+            updatePreview();
+        } catch (err) {
+            showModal('Error', err.message);
+        }
+    } else {
+        window.location.href = 'dashboard.html';
     }
 }
 
@@ -50,7 +41,7 @@ async function loadReport() {
 
     const report = await res.json();
 
-    if (report.status !== 'APPROVED') {
+    if (report.status.toUpperCase() !== 'APPROVED') {
         throw new Error('Only approved reports can be assigned');
     }
 
@@ -81,7 +72,7 @@ function renderReportDetails(report) {
         <div class="report-detail-row"><strong>Location:</strong> ${report.location}</div>
         <div class="report-detail-row"><strong>Damage Type:</strong> ${report.damage_type}</div>
         <div class="report-detail-row"><strong>Severity:</strong> ${report.severity}</div>
-        <div class="report-detail-row"><strong>Confidence:</strong> ${(report.confidence * 100).toFixed(2)}%</div>
+        <div class="report-detail-row"><strong>Confidence:</strong> ${report.confidence ? (report.confidence * 100).toFixed(2) + '%' : 'N/A'}</div>
     `;
 }
 
@@ -114,8 +105,11 @@ function setDefaultDate() {
 function bindPreviewUpdates() {
     ['contractorSelect', 'prioritySelect', 'completionDate', 'instructionsInput']
         .forEach(id => {
-            document.getElementById(id).addEventListener('change', updatePreview);
-            document.getElementById(id).addEventListener('input', updatePreview);
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('change', updatePreview);
+                el.addEventListener('input', updatePreview);
+            }
         });
 }
 
@@ -189,7 +183,7 @@ async function assignWork() {
         );
 
         setTimeout(() => {
-            window.location.href = 'dashboard.html';
+            window.location.href = 'assignment.html';
         }, 1500);
 
     } catch (err) {
@@ -201,10 +195,63 @@ async function assignWork() {
 // CANCEL
 // =====================================================
 function cancelAssignment() {
-    window.location.href = 'dashboard.html';
+    window.location.href = 'assignment.html';
 }
 
 // =====================================================
-// INIT
+// CONTRACTOR MANAGEMENT (ADD/DELETE)
+// =====================================================
+let deleteMode = false;
+
+window.toggleDeleteMode = function () {
+    deleteMode = !deleteMode;
+    const btn = document.getElementById('toggleDeleteBtn');
+    const select = document.getElementById('contractorSelect');
+
+    if (deleteMode) {
+        btn.textContent = 'Exit Delete Mode';
+        btn.classList.remove('btn-danger');
+        btn.classList.add('btn-secondary');
+        showModal('Delete Mode', 'Click on a contractor in the list to delete them.', 'info');
+    } else {
+        btn.textContent = 'Delete Contractor';
+        btn.classList.remove('btn-secondary');
+        btn.classList.add('btn-danger');
+    }
+};
+
+// Handle contractor selection (including deletion)
+document.getElementById('contractorSelect').addEventListener('change', async (e) => {
+    const contractorId = e.target.value;
+    if (!contractorId) return;
+
+    if (deleteMode) {
+        const contractor = contractors.find(c => c.id == contractorId);
+        if (!contractor) return;
+
+        const confirmDelete = confirm(`Are you sure you want to delete contractor: ${contractor.name}?`);
+        if (confirmDelete) {
+            try {
+                const res = await Auth.fetchWithAuth(`/api/official/contractors/${contractorId}`, {
+                    method: 'DELETE'
+                });
+
+                if (res.ok) {
+                    showModal('Deleted', 'Contractor removed successfully', 'success');
+                    await loadContractors(); // Refresh list
+                    e.target.value = ''; // Reset select
+                } else {
+                    const err = await res.json();
+                    throw new Error(err.msg || 'Deletion failed');
+                }
+            } catch (err) {
+                showModal('Error', err.message);
+            }
+        }
+    }
+});
+
+// =====================================================
+// INIT CALL
 // =====================================================
 document.addEventListener('DOMContentLoaded', initAssignment);

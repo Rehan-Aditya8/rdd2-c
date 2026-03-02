@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt, get_jwt_identity
-from app.models import DamageReport
+from app.models import DamageReport, Contractor
 from app import db
 from app.utils import log_audit
 from flask import current_app
@@ -289,14 +289,58 @@ def assign_work(report_id):
 @official_bp.route('/contractors', methods=['GET'])
 def get_contractors():
     """
-    Placeholder.
-    Replace with Contractor model later.
+    Fetch all contractors from database
     """
+    contractors = Contractor.query.all()
     return jsonify([
-        {"id": "C1", "name": "ABC Road Works", "specialization": "Potholes", "rating": 4.5},
-        {"id": "C2", "name": "XYZ Infra", "specialization": "Resurfacing", "rating": 4.8},
-        {"id": "C3", "name": "City Builders", "specialization": "General", "rating": 4.2}
+        {
+            "id": c.id,
+            "name": c.name,
+            "specialization": c.specialization,
+            "contact": c.contact,
+            "rating": c.rating
+        }
+        for c in contractors
     ]), 200
+
+
+@official_bp.route('/contractors', methods=['POST'])
+def add_contractor():
+    """
+    Add a new contractor
+    """
+    data = request.get_json() or {}
+    name = data.get("name")
+    specialization = data.get("specialization")
+    contact = data.get("contact")
+
+    if not name:
+        return jsonify({"msg": "Name is required"}), 400
+
+    contractor = Contractor(
+        name=name,
+        specialization=specialization,
+        contact=contact
+    )
+    db.session.add(contractor)
+    db.session.commit()
+
+    return jsonify({"msg": "Contractor added", "id": contractor.id}), 201
+
+
+@official_bp.route('/contractors/<id>', methods=['DELETE'])
+def delete_contractor(id):
+    """
+    Delete a contractor
+    """
+    contractor = Contractor.query.get(id)
+    if not contractor:
+        return jsonify({"msg": "Contractor not found"}), 404
+
+    db.session.delete(contractor)
+    db.session.commit()
+
+    return jsonify({"msg": "Contractor deleted"}), 200
 
 
 # =====================================================
