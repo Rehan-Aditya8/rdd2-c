@@ -5,114 +5,244 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Track Reports - Road Damage Detection</title>
-    <link rel="stylesheet" href="../shared/styles.css">
+    <meta name="description" content="Track your submitted road damage reports and monitor their repair status.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles/tracking.css">
 </head>
 
 <body>
-    <!-- Top Bar -->
-    <div class="top-bar">
-        <h1>Track Your Reports</h1>
-        <div class="profile-container">
-            <div class="profile-icon" onclick="toggleProfileMenu()">👤</div>
-            <div class="profile-menu" id="profileMenu">
-                <div class="menu-header">
-                    <span class="user-name">Loading...</span>
-                    <span class="user-role">Role</span>
+    <!-- =========================================================
+         TOP BAR
+    ========================================================== -->
+    <header class="top-bar">
+        <div class="top-bar__brand">
+            <div class="top-bar__logo">
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+                    <rect x="2" y="6" width="5" height="16" rx="1.5" fill="#2563eb" />
+                    <rect x="10" y="2" width="5" height="20" rx="1.5" fill="#2563eb" opacity="0.7" />
+                    <rect x="18" y="9" width="5" height="13" rx="1.5" fill="#2563eb" opacity="0.5" />
+                </svg>
+            </div>
+            <span class="top-bar__title">Road Damage Detection</span>
+        </div>
+        <div class="top-bar__actions">
+            <!-- Notification Bell -->
+            <a href="notifications.html" class="top-bar__icon-btn" aria-label="Notifications">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                </svg>
+            </a>
+            <!-- Profile Avatar -->
+            <div class="profile-container">
+                <div class="top-bar__avatar" id="profileAvatar" onclick="toggleProfileMenu()" aria-label="Account menu"
+                    role="button" tabindex="0">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                    </svg>
                 </div>
-                <button class="menu-item logout" onclick="confirmLogout()">
-                    <span>🚪</span> Logout
+                <!-- Profile Dropdown -->
+                <div class="profile-menu" id="profileMenu" role="menu">
+                    <div class="menu-header">
+                        <span class="user-name">Loading...</span>
+                        <span class="user-role">Role</span>
+                    </div>
+                    <button class="menu-item logout" onclick="confirmLogout()" role="menuitem">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                            <polyline points="16 17 21 12 16 7" />
+                            <line x1="21" y1="12" x2="9" y2="12" />
+                        </svg>
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- =========================================================
+         NAVIGATION TABS
+    ========================================================== -->
+    <nav class="nav-bar" role="navigation" aria-label="Main navigation">
+        <a href="dashboard.html" class="nav-link" id="nav-dashboard">Dashboard</a>
+        <a href="report-damage.html" class="nav-link" id="nav-report">Report Damage</a>
+        <a href="tracking.html" class="nav-link active" id="nav-track">Track Reports</a>
+        <a href="notifications.html" class="nav-link" id="nav-notif">Notifications</a>
+    </nav>
+
+    <!-- =========================================================
+         MAIN CONTENT
+    ========================================================== -->
+    <main class="page-wrapper">
+
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="page-header__text">
+                <h1 class="page-header__title">Track Your Reports</h1>
+                <p class="page-header__subtitle">Manage and monitor the status of civic issues reported by you.</p>
+            </div>
+            <a href="report-damage.html" class="btn btn-primary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="16"></line>
+                    <line x1="8" y1="12" x2="16" y2="12"></line>
+                </svg>
+                New Report
+            </a>
+        </div>
+
+        <!-- Report Details (hidden by default, shown when a report is selected) -->
+        <div id="reportDetails" style="display: none;">
+            <!-- Back button -->
+            <div class="back-bar">
+                <button class="btn btn-ghost btn-sm" onclick="closeReportDetails()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <polyline points="15 18 9 12 15 6" />
+                    </svg>
+                    Back to All Reports
+                </button>
+            </div>
+
+            <!-- Status Timeline -->
+            <section class="card detail-card" aria-labelledby="statusHeading">
+                <div class="card__header">
+                    <h2 class="card__title" id="statusHeading">Report Status</h2>
+                </div>
+                <div class="timeline-wrapper">
+                    <div class="timeline" id="statusTimeline">
+                        <!-- Timeline items will be populated by JavaScript -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Repair Photos (if completed) -->
+            <section class="card detail-card" id="repairPhotosSection" style="display: none;"
+                aria-labelledby="repairPhotosHeading">
+                <div class="card__header">
+                    <h2 class="card__title" id="repairPhotosHeading">Completion Evidence</h2>
+                </div>
+                <div class="repair-photos-grid" id="repairPhotosGrid">
+                    <!-- Repair photos populated by JavaScript -->
+                </div>
+            </section>
+
+            <!-- Actions -->
+            <div class="tracking-actions">
+                <button class="btn btn-ghost" onclick="closeReportDetails()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <polyline points="15 18 9 12 15 6" />
+                    </svg>
+                    Close Report
                 </button>
             </div>
         </div>
-    </div>
-
-    <!-- Navigation -->
-    <nav class="nav-bar">
-        <a href="dashboard.html" class="nav-link">Dashboard</a>
-        <a href="report-damage.html" class="nav-link">Report Damage</a>
-        <a href="tracking.html" class="nav-link active">Track Reports</a>
-        <a href="notifications.html" class="nav-link">Notifications</a>
-    </nav>
-
-    <!-- Main Content -->
-    <div class="container">
-        <!-- Report Selector -->
-
-
-        <!-- Report Details -->
-        <div id="reportDetails" style="display: none;">
-            <!-- Status Timeline -->
-            <div class="status-timeline-section">
-                <h2>Report Status</h2>
-                <div class="timeline" id="statusTimeline">
-                    <!-- Timeline items will be populated by JavaScript -->
-                </div>
-            </div>
-
-            <!-- Report Image -->
-            <!-- Report Image -->
-            <!-- <div class="report-image-section">
-                <h2>Reported Damage</h2>
-                <div class="images-container" style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                    <div class="image-box" style="flex: 1; min-width: 250px;">
-                        <h3 style="color: #ccc; margin-bottom: 0.5rem;">Before</h3>
-                        <img id="reportImage" class="image-preview" alt="Reported damage" style="margin-top: 0;">
-                    </div>
-                    <div class="image-box" style="flex: 1; min-width: 250px;">
-                        <h3 style="color: #ccc; margin-bottom: 0.5rem;">After</h3>
-                         Placeholder or After Image -->
-            <!--<div id="afterImageContainer" class="image-preview"
-                            style="margin-top: 0; background: #1a1a2e; border: 1px dashed #444; height: 300px; display: flex; align-items: center; justify-content: center; color: #666;">
-                            Repair Pending
-                        </div>
-                    </div>
-                </div>
-            </div> -->
-
-            <!-- Assigned Department -->
-            <!--<div class="department-section">
-                <h2>Assigned Department</h2> 
-                <div class="department-info" id="departmentInfo"> -->
-            <!-- Department info will be populated by JavaScript -->
-            <!--   </div>
-            </div> -->
-
-            <!-- Repair Photos (if completed) -->
-            <div class="repair-photos-section" id="repairPhotosSection" style="display: none;">
-                <h2>Completion Evidence</h2>
-                <div class="repair-photos-grid" id="repairPhotosGrid">
-                    <!-- Repair photos will be populated by JavaScript -->
-                </div>
-            </div>
-
-            <!-- Actions -->
-            <!-- Actions -->
-            <div class="tracking-actions">
-                <button class="btn btn-secondary" onclick="closeReportDetails()">Close Report</button>
-            </div>
-        </div>
 
         <!-- All Reports List -->
-        <!-- All Reports List -->
-        <div id="reportsList" class="all-reports-section">
-            <h2>All Your Reports</h2>
-            <div class="reports-table-container">
-                <table>
+        <section id="reportsList" class="card all-reports-card" aria-labelledby="allReportsHeading">
+            <!-- Search & Filter Bar -->
+            <div class="filter-bar">
+                <div class="search-box">
+                    <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input type="text" id="searchInput" class="search-input"
+                        placeholder="Search by Report ID or location...">
+                </div>
+                <div class="filter-controls">
+                    <div class="filter-select-wrapper">
+                        <select id="statusFilter" class="filter-select">
+                            <option value="all">All Statuses</option>
+                            <option value="submitted">Pending</option>
+                            <option value="in-progress">In Progress</option>
+                            <option value="resolved">Fixed</option>
+                            <option value="rejected">Rejected</option>
+                        </select>
+                        <svg class="filter-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </div>
+                    <div class="filter-select-wrapper">
+                        <select id="sortFilter" class="filter-select">
+                            <option value="date-desc">Sort by Date</option>
+                            <option value="date-asc">Oldest First</option>
+                            <option value="id">Sort by ID</option>
+                        </select>
+                        <svg class="filter-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-wrapper">
+                <table class="reports-table">
                     <thead>
                         <tr>
-                            <th>Report ID</th>
-                            <th>Location</th>
-                            <th>Date</th>
-                            <th>Status</th>
-                            <th>Actions</th>
+                            <th scope="col">PREVIEW</th>
+                            <th scope="col">REPORT ID</th>
+                            <th scope="col">LOCATION</th>
+                            <th scope="col">DATE SUBMITTED</th>
+                            <th scope="col">STATUS</th>
+                            <th scope="col">ACTIONS</th>
                         </tr>
                     </thead>
                     <tbody id="allReportsTable">
-                        <!-- Reports will be populated by JavaScript -->
+                        <tr class="loading-row">
+                            <td colspan="6">
+                                <div class="table-loading">
+                                    <div class="spinner-sm"></div>
+                                    Loading reports…
+                                </div>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
+
+            <!-- Pagination -->
+            <div class="pagination-bar" id="paginationBar">
+                <span class="pagination-info" id="paginationInfo">Showing 0 reports</span>
+                <div class="pagination-controls" id="paginationControls"></div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- =========================================================
+         FOOTER
+    ========================================================== -->
+    <footer class="site-footer">
+        <span class="site-footer__copy">&copy; 2024 Road Damage Detection Platform. All rights reserved.</span>
+        <nav class="site-footer__links" aria-label="Footer navigation">
+            <a href="#" class="site-footer__link">Privacy Policy</a>
+            <a href="#" class="site-footer__link">Terms of Service</a>
+            <a href="#" class="site-footer__link">Contact Support</a>
+        </nav>
+    </footer>
+
+    <!-- Shared modal overlay -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle"></h3>
+                <button class="modal-close" id="modalClose" onclick="closeModal()"
+                    aria-label="Close modal">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+            <div class="modal-footer" id="modalFooter"></div>
         </div>
     </div>
 
@@ -120,6 +250,11 @@
     <script src="../shared/modal.js"></script>
     <script src="../shared/auth.js"></script>
     <script src="scripts/tracking.js"></script>
+    <script>
+        document.getElementById('profileAvatar').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleProfileMenu(); }
+        });
+    </script>
 </body>
 
 </html>

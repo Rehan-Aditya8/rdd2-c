@@ -5,134 +5,326 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Report Damage - Road Damage Detection</title>
-    <link rel="stylesheet" href="../shared/styles.css">
+    <meta name="description"
+        content="Report new road damage using realtime AI detection. Submit reports to help your community.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles/report-damage.css">
 </head>
 
 <body>
-    <!-- Top Bar -->
-    <div class="top-bar">
-        <h1>Report New Damage</h1>
-        <div class="profile-container">
-            <div class="profile-icon" onclick="toggleProfileMenu()">👤</div>
-            <div class="profile-menu" id="profileMenu">
-                <div class="menu-header">
-                    <span class="user-name">Loading...</span>
-                    <span class="user-role">Role</span>
+    <!-- =========================================================
+         TOP BAR (inline navigation – matches dashboard)
+    ========================================================== -->
+    <header class="top-bar">
+        <div class="top-bar__left">
+            <div class="top-bar__brand">
+                <div class="top-bar__logo">
+                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+                        <rect x="2" y="6" width="5" height="16" rx="1.5" fill="#2563eb" />
+                        <rect x="10" y="2" width="5" height="20" rx="1.5" fill="#2563eb" opacity="0.7" />
+                        <rect x="18" y="9" width="5" height="13" rx="1.5" fill="#2563eb" opacity="0.5" />
+                    </svg>
                 </div>
-                <button class="menu-item logout" onclick="confirmLogout()">
-                    <span>🚪</span> Logout
-                </button>
+                <span class="top-bar__title">Road Damage Detection</span>
+            </div>
+            <nav class="top-bar__nav" role="navigation" aria-label="Main navigation">
+                <a href="dashboard.html" class="top-nav-link" id="nav-dashboard">Dashboard</a>
+                <a href="report-damage.html" class="top-nav-link active" id="nav-report">Report Damage</a>
+                <a href="tracking.html" class="top-nav-link" id="nav-track">Track Reports</a>
+                <a href="notifications.html" class="top-nav-link" id="nav-notif">Notifications</a>
+            </nav>
+        </div>
+        <div class="top-bar__right">
+            <div class="top-bar__search">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="text" placeholder="Search..." class="top-bar__search-input">
+            </div>
+            <a href="notifications.html" class="top-bar__icon-btn" aria-label="Notifications">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                </svg>
+            </a>
+            <div class="top-bar__user-info">
+                <span class="top-bar__user-role">citizen</span>
+                <span class="top-bar__user-name" id="topBarUserName">John Doe</span>
+            </div>
+            <div class="profile-container">
+                <div class="top-bar__avatar" id="profileAvatar" onclick="toggleProfileMenu()" aria-label="Account menu"
+                    role="button" tabindex="0">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                    </svg>
+                </div>
+                <!-- Profile Dropdown -->
+                <div class="profile-menu" id="profileMenu" role="menu">
+                    <div class="menu-header">
+                        <span class="user-name">Loading...</span>
+                        <span class="user-role">Role</span>
+                    </div>
+                    <button class="menu-item logout" onclick="confirmLogout()" role="menuitem">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                            <polyline points="16 17 21 12 16 7" />
+                            <line x1="21" y1="12" x2="9" y2="12" />
+                        </svg>
+                        Logout
+                    </button>
+                </div>
             </div>
         </div>
-    </div>
+    </header>
 
-    <!-- Navigation -->
-    <nav class="nav-bar">
-        <a href="dashboard.html" class="nav-link">Dashboard</a>
-        <a href="report-damage.html" class="nav-link active">Report Damage</a>
-        <a href="tracking.html" class="nav-link">Track Reports</a>
-        <a href="notifications.html" class="nav-link">Notifications</a>
-    </nav>
+    <!-- =========================================================
+         MAIN CONTENT
+    ========================================================== -->
+    <main class="page-wrapper">
 
-    <!-- Main Content -->
-    <div class="container">
-        <div class="report-form-container">
-
-            <!-- ===== TAB SWITCHER ===== -->
-            <div class="tab-switcher">
-                <button class="tab-btn active" id="tabRealtime" onclick="switchTab('realtime')">📹 Realtime
-                    Detection</button>
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="page-header__text">
+                <h1 class="page-header__title">Report New Damage</h1>
+                <p class="page-header__subtitle">Help us improve the city's infrastructure by reporting issues in your
+                    area.</p>
             </div>
+        </div>
 
-            <!-- ===================================================
-                 TAB 3: REALTIME
-                 =================================================== -->
-            <div class="tab-panel active" id="panelRealtime">
-                <div class="upload-section">
-                    <!-- Webcam feed -->
-                    <div class="webcam-container" id="webcamContainer">
-                        <div id="webcamPlaceholder">
-                            <div class="upload-icon">📷</div>
-                            <p style="color:#666;">Click "Start Detection" to begin</p>
+        <div class="report-layout">
+            <!-- Left Column: Form -->
+            <div class="report-layout__main">
+                <div class="card form-card">
+                    <!-- 1 Evidence Capture -->
+                    <h3 class="section-title"><span class="step-badge">1</span> Evidence Capture</h3>
+
+                    <!-- Hidden file input kept for compatibility -->
+                    <input type="file" id="imageInput" accept="image/jpeg, image/png" hidden>
+                    <div id="uploadBox" style="display:none;"></div>
+                    <div id="uploadContent" style="display:none;"></div>
+                    <img id="imagePreview" style="display:none;" />
+
+                    <div class="evidence-grid">
+                        <!-- Live Detection Camera Box -->
+                        <div class="camera-box camera-box--hero" id="rtStartBtn">
+                            <div class="camera-icon">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path
+                                        d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z">
+                                    </path>
+                                    <circle cx="12" cy="13" r="4"></circle>
+                                </svg>
+                            </div>
+                            <p class="camera-title"><strong>Start Live Detection</strong></p>
+                            <p class="camera-subtitle">Open your camera to detect road damage in real-time</p>
                         </div>
+
+                        <!-- GPS Box -->
+                        <div class="gps-box">
+                            <div class="gps-header">
+                                <div class="gps-icon-wrapper">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e"
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                </div>
+                                <span class="gps-status">GPS ACTIVE</span>
+                            </div>
+                            <div class="gps-coords">
+                                <p class="gps-label">CURRENT COORDINATES</p>
+                                <p class="gps-value">Lat: <span id="gpsLatDisplay">--</span></p>
+                                <p class="gps-value">Lng: <span id="gpsLngDisplay">--</span></p>
+                                <span id="rtLocationDisplay" style="display:none;"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Webcam Container (Hidden by default) -->
+                    <div class="webcam-container" id="webcamContainer" style="display:none;">
                         <video id="webcamVideo" autoplay playsinline muted></video>
-
-                        <!-- Live badge -->
-                        <div class="live-badge" id="liveBadge">
-                            <div class="live-dot"></div> LIVE
-                        </div>
-
-                        <!-- Detection overlay -->
                         <div class="detection-overlay" id="detectionOverlay"></div>
-                    </div>
-
-                    <!-- Stats -->
-                    <div class="rt-stats">
-                        <div class="rt-stat">
-                            <div class="rt-value" id="rtTotal">0</div>
-                            <div class="rt-label">Total Detections</div>
-                        </div>
-                        <div class="rt-stat">
-                            <div class="rt-value" id="rtFrames">0</div>
-                            <div class="rt-label">Frames Sent</div>
-                        </div>
-                        <div class="rt-stat">
-                            <div class="rt-value" id="rtStatus" style="font-size:1rem;">Idle</div>
-                            <div class="rt-label">Status</div>
+                        <div class="webcam-controls"
+                            style="margin-top: 1rem; text-align: center; display: flex; gap: 10px; justify-content: center; padding: 10px;">
+                            <button class="btn btn-primary" id="rtStopBtn" style="display:none;">Stop Camera</button>
+                            <button class="btn btn-ghost" id="rtSwitchBtn" style="display:none;">Switch Camera</button>
                         </div>
                     </div>
 
-                    <!-- GPS location display for realtime reports -->
-                    <div class="info-section" style="margin-top:1rem;">
-                        <div class="form-group">
-                            <label class="form-label">📍 GPS Location</label>
-                            <div class="info-display" id="rtLocationDisplay">Acquiring location...</div>
+                    <span id="rtStatus" style="display:none;">Idle</span>
+                    <span id="rtFrames" style="display:none;">0</span>
+                    <span id="rtTotal" style="display:none;">0</span>
+
+                    <hr class="section-divider">
+
+                    <!-- 2 Damage Details -->
+                    <h3 class="section-title"><span class="step-badge">2</span> Damage Details</h3>
+
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label class="form-label" for="damageTypeSelect">Damage Type</label>
+                            <div class="select-wrapper">
+                                <select class="form-select" id="damageTypeSelect">
+                                    <option value="" disabled selected>Select type...</option>
+                                    <option value="Longitudinal Crack">Longitudinal Crack</option>
+                                    <option value="Transverse Crack">Transverse Crack</option>
+                                    <option value="Alligator Crack">Alligator Crack</option>
+                                    <option value="Pothole">Pothole</option>
+                                </select>
+                                <div class="select-arrow">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="6 9 12 15 18 9"></polyline>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group half">
+                            <label class="form-label">Severity Level</label>
+                            <div class="severity-toggle">
+                                <button type="button" class="sev-btn" data-severity="Low" id="sevLow">Low</button>
+                                <button type="button" class="sev-btn active" data-severity="Medium"
+                                    id="sevMedium">Medium</button>
+                                <button type="button" class="sev-btn" data-severity="High" id="sevHigh">High</button>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Last detection card + submit button -->
-                    <div id="rtLastDetectionCard"
-                        style="display:none; margin-top:1rem; padding:1rem; background:rgba(79,70,229,0.1); border:1px solid #4f46e5; border-radius:10px;">
-                        <h4 style="margin-bottom:0.5rem;">📸 Last Detection</h4>
-                        <p id="rtLastDetectionLabel" style="color:#a5b4fc; margin-bottom:0.75rem;"></p>
-                        <img id="rtLastDetectionImg" alt="Last detected frame"
-                            style="width:100%; border-radius:8px; border:1px solid #4f46e5; margin-bottom:0.75rem; display:none;">
-                        <div class="form-group">
-                            <label class="form-label">Description (Optional)</label>
-                            <textarea class="form-textarea" id="rtDescriptionInput"
-                                placeholder="Provide additional details..." rows="2"></textarea>
+                    <div class="form-group">
+                        <label class="form-label" for="rtDescriptionInput">Additional Notes (Optional)</label>
+                        <textarea class="form-textarea" id="rtDescriptionInput" rows="3"
+                            placeholder="Describe the issue in more detail..."></textarea>
+                    </div>
+
+                    <hr class="form-actions-divider">
+
+                    <div class="form-actions">
+                        <span class="form-note">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                            Your report will be verified by our AI and city officials.
+                        </span>
+                        <div class="action-btns">
+                            <button type="button" class="btn btn-ghost" id="cancelReportBtn">Cancel</button>
+                            <button type="button" class="btn btn-primary" id="rtSubmitBtn">
+                                Submit Report
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                                </svg>
+                            </button>
                         </div>
-                        <button class="btn btn-primary" id="rtSubmitBtn" style="width:100%; margin-top:0.5rem;"
-                            onclick="submitRealtimeReport()">📤 Submit Report</button>
-                        <p id="rtSubmitStatus"
-                            style="text-align:center; color:#a5b4fc; font-size:0.85rem; margin-top:0.5rem; display:none;">
-                        </p>
                     </div>
-
-                    <!-- Controls -->
-                    <div class="rt-controls">
-                        <button class="btn btn-primary" id="rtStartBtn" onclick="startRealtime()">▶️ Start
-                            Detection</button>
-                        <button class="btn btn-secondary" id="rtStopBtn" onclick="stopRealtime()"
-                            style="display:none;">⏹️ Stop</button>
-                        <button class="btn btn-secondary" id="rtSwitchBtn" onclick="switchCamera()"
-                            style="display:none;" title="Switch between front and back camera">🔄 Switch Camera</button>
-                    </div>
-
-                    <p style="color:#666; font-size:0.85rem; margin-top:1rem;">
-                        💡 Frames are sent to the server every 1 second for analysis. Allow camera access when prompted.
-                    </p>
+                    <p id="rtSubmitStatus" class="submit-status" style="display:none;"></p>
                 </div>
             </div>
 
-        </div><!-- /report-form-container -->
-    </div><!-- /container -->
+            <!-- Right Column: Status + Tips -->
+            <aside class="report-layout__sidebar">
+                <!-- Status Cards -->
+                <div class="sidebar-card">
+                    <h4 class="sidebar-card__title">Detection Status</h4>
+                    <div class="sidebar-status-list">
+                        <div class="sidebar-status-item">
+                            <div class="ss-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                    <line x1="9" y1="21" x2="9" y2="9"></line>
+                                    <line x1="15" y1="21" x2="15" y2="15"></line>
+                                </svg></div>
+                            <div class="ss-text">
+                                <span class="ss-label">REPORT ID</span>
+                                <span class="ss-value" id="detectionIdValue">--</span>
+                            </div>
+                        </div>
+                        <div class="sidebar-status-item">
+                            <div class="ss-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                </svg></div>
+                            <div class="ss-text">
+                                <span class="ss-label">AI CONFIDENCE</span>
+                                <span class="ss-value" id="aiConfidenceValue">--</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Tips Card -->
+                <div class="sidebar-card sidebar-card--tips">
+                    <h4 class="sidebar-card__title">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10" />
+                            <line x1="12" y1="16" x2="12" y2="12" />
+                            <line x1="12" y1="8" x2="12.01" y2="8" />
+                        </svg>
+                        Reporting Tips
+                    </h4>
+                    <ul class="tips-list">
+                        <li>Ensure good lighting for accurate detection</li>
+                        <li>Hold camera steady and close to the damage</li>
+                        <li>GPS location is captured automatically</li>
+                        <li>AI will auto-detect damage type and severity</li>
+                        <li>Add notes for any additional context</li>
+                    </ul>
+                </div>
+
+            </aside>
+        </div>
+    </main>
+
+    <!-- =========================================================
+         FOOTER
+    ========================================================== -->
+    <footer class="site-footer">
+        <span class="site-footer__copy">&copy; 2024 Road Damage Detection Platform. All rights reserved.</span>
+        <nav class="site-footer__links" aria-label="Footer navigation">
+            <a href="#" class="site-footer__link">Privacy Policy</a>
+            <a href="#" class="site-footer__link">Terms of Service</a>
+            <a href="#" class="site-footer__link">Contact Support</a>
+        </nav>
+    </footer>
+
+    <!-- Shared modal overlay -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle"></h3>
+                <button class="modal-close" id="modalClose" onclick="closeModal()"
+                    aria-label="Close modal">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+            <div class="modal-footer" id="modalFooter"></div>
+        </div>
+    </div>
 
     <script src="../shared/navigation.js"></script>
     <script src="../shared/modal.js"></script>
     <script src="../shared/auth.js"></script>
     <script src="scripts/report-damage.js"></script>
+    <script>
+        document.getElementById('profileAvatar').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleProfileMenu(); }
+        });
+    </script>
 </body>
 
 </html>

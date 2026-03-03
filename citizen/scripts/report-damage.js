@@ -1,108 +1,159 @@
-// Report Damage Screen JavaScript
-// Handles: Photo tab (existing), Video tab, Realtime tab
+// Unified Report Damage Screen JavaScript
+// Handles: Realtime Camera Detection (Live Detection Only)
 
 // =====================================================
 // SHARED STATE
 // =====================================================
 let selectedFile = null;
-let detectionResult = null;
-let annotatedImageB64 = null;  // stores base64 annotated image from /detect
+let currentMode = null; // 'camera' only now
+let detectionData = null; // Holds last detection { damage_type, confidence, annotated_image }
 
-// Shared GPS state — acquired once, used by all tabs
+// Shared GPS state
 let gpsData = { lat: null, lng: null, locationText: 'Acquiring location...' };
+
+// Realtime Camera State
+let rtStream = null;
+let rtIsRunning = false;
+let rtInterval = null;
+let rtCanvas = null;
+let rtCtx = null;
+let rtCurrentFacingMode = 'environment';
+
+// Track best detection to prevent fluctuation
+let bestDetection = null; // { damage_type, confidence, annotated_image }
 
 // =====================================================
 // INIT
 // =====================================================
 document.addEventListener('DOMContentLoaded', () => {
     Auth.requireRole('citizen');
-    initReportForm();
-    initRealtimeTab();
+    initGPS();
+    initUIControls();
+
+    rtCanvas = document.createElement('canvas');
 });
 
 // =====================================================
-// TAB SWITCHING
+// GPS HANDLING
 // =====================================================
-function switchTab(tab) {
-    // Deactivate all
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+function initGPS() {
+    const latDisplay = document.getElementById('gpsLatDisplay');
+    const lngDisplay = document.getElementById('gpsLngDisplay');
+    const statusText = document.querySelector('.gps-status');
 
-    // Activate selected
-    document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
-    document.getElementById('panel' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
-
-    // Stop realtime if switching away
-    if (tab !== 'realtime' && rtIsRunning) {
-        stopRealtime();
-    }
-}
-
-// =====================================================
-// =====================================================
-// TAB 1: PHOTO (existing logic, unchanged)
-// =====================================================
-// =====================================================
-
-function initReportForm() {
-    const rtLocDisplay = document.getElementById('rtLocationDisplay');
-
-    function setAllLocationDisplays(text) {
-        if (rtLocDisplay) rtLocDisplay.textContent = text;
+    function updateGPSUI() {
+        if (gpsData.lat !== null) {
+            latDisplay.textContent = gpsData.lat.toFixed(5);
+            lngDisplay.textContent = gpsData.lng.toFixed(5);
+            if (statusText) statusText.textContent = "GPS ACTIVE";
+        } else {
+            latDisplay.textContent = "--";
+            lngDisplay.textContent = "--";
+            if (statusText) statusText.textContent = "SEARCHING...";
+        }
     }
 
     if ("geolocation" in navigator) {
-        setAllLocationDisplays('Acquiring GPS...');
         navigator.geolocation.getCurrentPosition(
             (position) => {
                 const { latitude, longitude } = position.coords;
                 gpsData.lat = latitude;
                 gpsData.lng = longitude;
                 gpsData.locationText = `Lat: ${latitude.toFixed(5)}, Lng: ${longitude.toFixed(5)}`;
-                setAllLocationDisplays(gpsData.locationText);
+                updateGPSUI();
             },
             (error) => {
                 gpsData.locationText = 'Location permission REQUIRED';
-                setAllLocationDisplays(gpsData.locationText);
+                if (statusText) statusText.textContent = "GPS DISABLED";
                 showAlert("Location Required", "Please enable GPS and allow precise location.", "warning");
             },
             { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
         );
     } else {
         gpsData.locationText = 'Geolocation not supported';
-        setAllLocationDisplays(gpsData.locationText);
+        if (statusText) statusText.textContent = "GPS UNAVAILABLE";
     }
 }
 
 // =====================================================
+// UI CONTROLS INIT
 // =====================================================
-// TAB 3: REALTIME
-// =====================================================
-// =====================================================
+function initUIControls() {
+    // 1. Camera Controls
+    document.getElementById('rtStartBtn').addEventListener('click', () => {
+        startRealtime();
+    });
 
-let rtStream = null;
-let rtIsRunning = false;
-let rtInterval = null;
-let rtTotalDetections = 0;
-let rtFramesSent = 0;
-let rtCanvas = null;
-let rtCtx = null;
-let rtCurrentFacingMode = 'environment'; // 'environment' = back, 'user' = front
+    document.getElementById('rtStopBtn').addEventListener('click', stopRealtime);
+    document.getElementById('rtSwitchBtn').addEventListener('click', switchCamera);
 
-function initRealtimeTab() {
-    rtCanvas = document.createElement('canvas');
+    // 2. Severity Toggle
+    const sevBtns = document.querySelectorAll('.sev-btn');
+    sevBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            sevBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        });
+    });
+
+    // 3. Form Actions
+    document.getElementById('cancelReportBtn').addEventListener('click', resetForm);
+    document.getElementById('rtSubmitBtn').addEventListener('click', submitReport);
 }
 
+function updateSeverity(confidence) {
+    const sevBtns = document.querySelectorAll('.sev-btn');
+    sevBtns.forEach(b => b.classList.remove('active'));
+
+    let sevId = 'sevLow';
+    if (confidence >= 0.8) sevId = 'sevHigh';
+    else if (confidence >= 0.5) sevId = 'sevMedium';
+
+    document.getElementById(sevId).classList.add('active');
+}
+
+function updateStatusCards(damageType, confidence) {
+    document.getElementById('detectionIdValue').textContent = "Pending Submit";
+    document.getElementById('aiConfidenceValue').textContent = damageType === 'No Damage' ? '--' : `${(confidence * 100).toFixed(1)}% Match`;
+    document.getElementById('statusValue').textContent = damageType === 'No Damage' ? 'Ready to send' : 'Damage Detected';
+}
+
+function resetForm() {
+    selectedFile = null;
+    currentMode = null;
+    detectionData = null;
+    bestDetection = null;
+
+    if (rtIsRunning) stopRealtime();
+
+    document.getElementById('damageTypeSelect').value = '';
+    const sevBtns = document.querySelectorAll('.sev-btn');
+    sevBtns.forEach(b => b.classList.remove('active'));
+    document.getElementById('sevMedium').classList.add('active'); // default
+
+    document.getElementById('rtDescriptionInput').value = '';
+    document.getElementById('rtSubmitStatus').style.display = 'none';
+
+    document.getElementById('detectionIdValue').textContent = '--';
+    document.getElementById('aiConfidenceValue').textContent = '--';
+    document.getElementById('statusValue').textContent = 'Ready to send';
+
+    document.getElementById('rtSubmitBtn').disabled = false;
+    document.getElementById('rtSubmitBtn').innerHTML = `Submit Report <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>`;
+}
+
+// =====================================================
+// CAMERA / REALTIME PROCESS
+// =====================================================
 async function startRealtime(facingMode) {
     if (facingMode) rtCurrentFacingMode = facingMode;
 
+    // Reset best detection when starting new session
+    bestDetection = null;
+
     try {
         rtStream = await navigator.mediaDevices.getUserMedia({
-            video: {
-                width: { ideal: 640 },
-                height: { ideal: 480 },
-                facingMode: { ideal: rtCurrentFacingMode }
-            },
+            video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: { ideal: rtCurrentFacingMode } },
             audio: false
         });
     } catch (err) {
@@ -110,22 +161,20 @@ async function startRealtime(facingMode) {
         return;
     }
 
+    currentMode = 'camera';
+
+    const webcamContainer = document.getElementById('webcamContainer');
     const video = document.getElementById('webcamVideo');
     video.srcObject = rtStream;
-    video.style.display = 'block';
-    document.getElementById('webcamPlaceholder').style.display = 'none';
-    document.getElementById('liveBadge').style.display = 'flex';
+    webcamContainer.style.display = 'block';
+
+    document.getElementById('rtStopBtn').style.display = 'inline-flex';
+    document.getElementById('rtSwitchBtn').style.display = 'inline-flex';
     document.getElementById('detectionOverlay').style.display = 'block';
 
-    document.getElementById('rtStartBtn').style.display = 'none';
-    document.getElementById('rtStopBtn').style.display = 'block';
-    document.getElementById('rtSwitchBtn').style.display = 'block';
-    document.getElementById('rtStatus').textContent = 'Active';
-    document.getElementById('rtStatus').style.color = '#22c55e';
+    document.getElementById('statusValue').textContent = 'Camera Active';
 
     rtIsRunning = true;
-    rtTotalDetections = 0;
-    rtFramesSent = 0;
 
     // Wait for video to be ready then start polling
     video.onloadedmetadata = () => {
@@ -136,18 +185,120 @@ async function startRealtime(facingMode) {
     };
 }
 
+function stopRealtime() {
+    rtIsRunning = false;
+
+    if (rtInterval) {
+        clearInterval(rtInterval);
+        rtInterval = null;
+    }
+
+    if (rtStream) {
+        rtStream.getTracks().forEach(t => t.stop());
+        rtStream = null;
+    }
+
+    const video = document.getElementById('webcamVideo');
+    video.srcObject = null;
+
+    document.getElementById('webcamContainer').style.display = 'none';
+    document.getElementById('rtStopBtn').style.display = 'none';
+    document.getElementById('rtSwitchBtn').style.display = 'none';
+    document.getElementById('detectionOverlay').style.display = 'none';
+
+    // --- FINALIZE: Lock in the best detection values ---
+    if (bestDetection && bestDetection.damage_type && bestDetection.damage_type !== 'No Damage') {
+        detectionData = bestDetection;
+
+        // Set damage type dropdown
+        const select = document.getElementById('damageTypeSelect');
+        const normalizedType = normalizeDamageType(bestDetection.damage_type);
+        if (normalizedType) {
+            select.value = normalizedType;
+        }
+
+        // Set severity based on final best confidence
+        updateSeverity(bestDetection.confidence);
+
+        // Set status cards with final values
+        updateStatusCards(bestDetection.damage_type, bestDetection.confidence);
+
+        document.getElementById('statusValue').textContent = 'Detection Complete';
+    } else {
+        document.getElementById('statusValue').textContent = 'No Damage Found';
+        currentMode = null;
+    }
+}
+
+// Normalize damage type from API to match dropdown options
+function normalizeDamageType(apiType) {
+    if (!apiType) return null;
+    const lower = apiType.toLowerCase().replace(/[_-]/g, ' ').trim();
+
+    const mappings = {
+        'longitudinal crack': 'Longitudinal Crack',
+        'longitudinal': 'Longitudinal Crack',
+        'transverse crack': 'Transverse Crack',
+        'transverse': 'Transverse Crack',
+        'alligator crack': 'Alligator Crack',
+        'alligator': 'Alligator Crack',
+        'pothole': 'Pothole',
+        'potholes': 'Pothole',
+        'd00': 'Longitudinal Crack',
+        'd10': 'Transverse Crack',
+        'd20': 'Alligator Crack',
+        'd40': 'Pothole',
+    };
+
+    if (mappings[lower]) return mappings[lower];
+
+    // Fuzzy match: try partial matching
+    for (const [key, value] of Object.entries(mappings)) {
+        if (lower.includes(key) || key.includes(lower)) {
+            return value;
+        }
+    }
+
+    // Direct match attempt against dropdown options
+    const select = document.getElementById('damageTypeSelect');
+    const found = Array.from(select.options).find(opt =>
+        opt.value.toLowerCase() === lower || opt.value === apiType
+    );
+    return found ? found.value : null;
+}
+
+async function switchCamera() {
+    rtCurrentFacingMode = rtCurrentFacingMode === 'environment' ? 'user' : 'environment';
+    if (rtInterval) { clearInterval(rtInterval); rtInterval = null; }
+    if (rtStream) { rtStream.getTracks().forEach(t => t.stop()); rtStream = null; }
+
+    try {
+        rtStream = await navigator.mediaDevices.getUserMedia({
+            video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: { ideal: rtCurrentFacingMode } },
+            audio: false
+        });
+        const video = document.getElementById('webcamVideo');
+        video.srcObject = rtStream;
+        video.onloadedmetadata = () => {
+            rtCanvas.width = video.videoWidth;
+            rtCanvas.height = video.videoHeight;
+            rtCtx = rtCanvas.getContext('2d');
+            rtInterval = setInterval(sendRealtimeFrame, 1000);
+        };
+    } catch (err) {
+        console.error(err);
+        rtCurrentFacingMode = rtCurrentFacingMode === 'environment' ? 'user' : 'environment';
+    }
+}
+
 async function sendRealtimeFrame() {
     if (!rtIsRunning) return;
 
     const video = document.getElementById('webcamVideo');
-    if (video.readyState < 2) return; // not ready yet
+    if (video.readyState < 2) return;
 
-    // Capture frame
     rtCtx.drawImage(video, 0, 0, rtCanvas.width, rtCanvas.height);
     const frameData = rtCanvas.toDataURL('image/jpeg', 0.7);
-
-    rtFramesSent++;
-    document.getElementById('rtFrames').textContent = rtFramesSent;
 
     try {
         const res = await fetch("/api/citizen/detect-frame", {
@@ -167,308 +318,108 @@ async function sendRealtimeFrame() {
         const data = await res.json();
         if (!res.ok) return;
 
+        // Update the live overlay (this is fine to keep updating while camera runs)
         updateRealtimeOverlay(data);
 
-        if (data.detected) {
-            rtTotalDetections++;
-            document.getElementById('rtTotal').textContent = rtTotalDetections;
+        // Track the best (highest confidence) detection
+        if (data.detected && data.damage_type && data.damage_type !== 'No Damage') {
+            if (!bestDetection || data.confidence > bestDetection.confidence) {
+                bestDetection = {
+                    damage_type: data.damage_type,
+                    confidence: data.confidence,
+                    annotated_image: data.annotated_image || null
+                };
+            }
         }
 
     } catch (err) {
-        // Silently ignore network errors during realtime
         console.warn("Realtime frame error:", err);
     }
 }
 
-// Stores last realtime detection for manual submit
-let rtLastDetection = null;
-
 function updateRealtimeOverlay(data) {
     const overlay = document.getElementById('detectionOverlay');
     if (data.detected && data.damage_type) {
-        overlay.innerHTML = `
-            <span class="detection-label">
-                ${data.damage_type} &nbsp; ${(data.confidence * 100).toFixed(0)}%
-            </span>
-        `;
-        // Update last detection card
-        rtLastDetection = data;
-        document.getElementById('rtLastDetectionLabel').textContent =
-            `${data.damage_type} — ${(data.confidence * 100).toFixed(0)}% confidence`;
-        // Show annotated frame if available
-        const img = document.getElementById('rtLastDetectionImg');
-        if (data.annotated_image) {
-            img.src = data.annotated_image.startsWith('data:') ? data.annotated_image : `data:image/jpeg;base64,${data.annotated_image}`;
-            img.style.display = 'block';
-        } else {
-            img.style.display = 'none';
-        }
-        // Reset submit button state
-        const submitBtn = document.getElementById('rtSubmitBtn');
-        const submitStatus = document.getElementById('rtSubmitStatus');
-        submitBtn.disabled = false;
-        submitBtn.textContent = '📤 Submit Report';
-        submitStatus.style.display = 'none';
-        document.getElementById('rtLastDetectionCard').style.display = 'block';
+        overlay.innerHTML = `<span class="detection-label">${data.damage_type} &nbsp; ${(data.confidence * 100).toFixed(0)}%</span>`;
     } else {
         overlay.innerHTML = `<span class="detection-label no-damage">✓ No Damage</span>`;
     }
-}
-
-function stopRealtime() {
-    rtIsRunning = false;
-
-    if (rtInterval) {
-        clearInterval(rtInterval);
-        rtInterval = null;
-    }
-
-    if (rtStream) {
-        rtStream.getTracks().forEach(t => t.stop());
-        rtStream = null;
-    }
-
-    const video = document.getElementById('webcamVideo');
-    video.srcObject = null;
-    video.style.display = 'none';
-
-    document.getElementById('webcamPlaceholder').style.display = 'block';
-    document.getElementById('liveBadge').style.display = 'none';
-    document.getElementById('detectionOverlay').style.display = 'none';
-    document.getElementById('rtStartBtn').style.display = 'block';
-    document.getElementById('rtStopBtn').style.display = 'none';
-    document.getElementById('rtSwitchBtn').style.display = 'none';
-    document.getElementById('rtStatus').textContent = 'Stopped';
-    document.getElementById('rtStatus').style.color = '#999';
-}
-
-/**
- * Switch between front and back camera while detection is running.
- */
-async function switchCamera() {
-    // Toggle facing mode
-    rtCurrentFacingMode = rtCurrentFacingMode === 'environment' ? 'user' : 'environment';
-
-    // Stop current stream and interval (but keep rtIsRunning = true)
-    if (rtInterval) {
-        clearInterval(rtInterval);
-        rtInterval = null;
-    }
-    if (rtStream) {
-        rtStream.getTracks().forEach(t => t.stop());
-        rtStream = null;
-    }
-
-    // Update button label to show which camera is now active
-    const switchBtn = document.getElementById('rtSwitchBtn');
-    switchBtn.textContent = rtCurrentFacingMode === 'environment' ? '🔄 Switch to Front' : '🔄 Switch to Back';
-    switchBtn.disabled = true;
-
-    // Restart with new camera
-    try {
-        rtStream = await navigator.mediaDevices.getUserMedia({
-            video: {
-                width: { ideal: 640 },
-                height: { ideal: 480 },
-                facingMode: { ideal: rtCurrentFacingMode }
-            },
-            audio: false
-        });
-
-        const video = document.getElementById('webcamVideo');
-        video.srcObject = rtStream;
-
-        video.onloadedmetadata = () => {
-            rtCanvas.width = video.videoWidth;
-            rtCanvas.height = video.videoHeight;
-            rtCtx = rtCanvas.getContext('2d');
-            rtInterval = setInterval(sendRealtimeFrame, 1000);
-            switchBtn.disabled = false;
-        };
-    } catch (err) {
-        showAlert("Camera Error", "Could not switch camera: " + err.message, "error");
-        // Revert facing mode
-        rtCurrentFacingMode = rtCurrentFacingMode === 'environment' ? 'user' : 'environment';
-        switchBtn.disabled = false;
-    }
+    overlay.style.display = 'block';
 }
 
 // =====================================================
-// HELPERS
+// SUBMIT REPORT
 // =====================================================
-function formatBytes(bytes) {
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
-}
-
-/**
- * Show a brief toast notification at the bottom of the screen.
- */
-function showToast(message, duration = 3000) {
-    const toast = document.createElement('div');
-    toast.textContent = message;
-    toast.style.cssText = [
-        'position:fixed', 'bottom:1.5rem', 'right:1.5rem',
-        'background:#4f46e5', 'color:#fff',
-        'padding:0.6rem 1.1rem', 'border-radius:8px',
-        'font-size:0.9rem', 'z-index:9999',
-        'box-shadow:0 4px 16px rgba(0,0,0,0.3)',
-        'transition:opacity 0.4s'
-    ].join(';');
-    document.body.appendChild(toast);
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        setTimeout(() => toast.remove(), 400);
-    }, duration);
-}
-
-/**
- * Download the annotated image from the Photo tab.
- */
-function downloadAnnotatedImage() {
-    const src = annotatedImageB64
-        ? `data:image/jpeg;base64,${annotatedImageB64}`
-        : document.getElementById('annotatedImagePreview').src;
-    if (!src) return;
-    const a = document.createElement('a');
-    a.href = src;
-    a.download = `pothole_detection_${Date.now()}.jpg`;
-    a.click();
-}
-
-/**
- * Download the full annotated video from the Video tab.
- */
-function downloadAnnotatedVideo() {
-    if (!videoToken) return;
-    // Navigating to the URL triggers the browser's file download
-    const a = document.createElement('a');
-    a.href = `/api/citizen/get-video/${videoToken}`;
-    a.download = `pothole_detection_${Date.now()}.mp4`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-}
-
-// Cleanup on page unload
-window.addEventListener('beforeunload', () => {
-    if (rtIsRunning) stopRealtime();
-});
-
-/**
- * Submit a report for the video analysis result.
- */
-async function submitVideoReport() {
-    if (!videoDetectionData) return;
-
-    const btn = document.getElementById('videoSubmitBtn');
-    const status = document.getElementById('videoSubmitStatus');
-    btn.disabled = true;
-    btn.textContent = '⏳ Submitting...';
-    status.style.display = 'none';
-
-    // Get top damage + confidence
-    const topDamage = videoDetectionData.top_damage;
-    const topConf = videoDetectionData.summary
-        ?.find(s => s.damage_type === topDamage)?.avg_confidence ?? 0;
-
-    try {
-        const res = await fetch('/api/citizen/submit-video', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${Auth.getToken()}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                damage_type: topDamage,
-                confidence: topConf,
-                location: gpsData.locationText,
-                latitude: gpsData.lat,
-                longitude: gpsData.lng,
-                description: document.getElementById('videoDescriptionInput')?.value?.trim() || ''
-            })
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.msg || 'Submit failed');
-
-        btn.textContent = '✅ Submitted';
-        status.textContent = `Report #${data.report_id} saved successfully!`;
-        status.style.color = '#22c55e';
-        status.style.display = 'block';
-    } catch (err) {
-        btn.disabled = false;
-        btn.textContent = '📤 Submit Report';
-        status.textContent = 'Error: ' + err.message;
-        status.style.color = '#f87171';
-        status.style.display = 'block';
+async function submitReport() {
+    if (!currentMode) {
+        showAlert("Incomplete", "Please start camera detection first.", "warning");
+        return;
     }
-}
 
-/**
- * Submit a report for the last realtime detection frame.
- */
-async function submitRealtimeReport() {
-    if (!rtLastDetection) return;
+    const typeSelect = document.getElementById('damageTypeSelect').value;
+    if (!typeSelect) {
+        showAlert("Incomplete", "Please select a Damage Type.", "warning");
+        return;
+    }
 
     const btn = document.getElementById('rtSubmitBtn');
     const status = document.getElementById('rtSubmitStatus');
     btn.disabled = true;
-    btn.textContent = '⏳ Submitting...';
+    btn.textContent = 'Submitting...';
     status.style.display = 'none';
 
-    const formData = new FormData();
-    formData.append('damage_type', rtLastDetection.damage_type);
-    formData.append('confidence', rtLastDetection.confidence);
-    formData.append('location', gpsData.locationText || '');
-    if (gpsData.lat !== null) {
-        formData.append('latitude', gpsData.lat);
-        formData.append('longitude', gpsData.lng);
-    }
-    const desc = document.getElementById('rtDescriptionInput')?.value?.trim();
-    if (desc) formData.append('description', desc);
-    // Attach the annotated frame image
-    if (rtLastDetection.annotated_image) {
-        formData.append('frame_b64', rtLastDetection.annotated_image);
-    }
+    // Which severity is selected?
+    const activeSev = document.querySelector('.sev-btn.active');
+    const severity = activeSev ? activeSev.getAttribute('data-severity').toLowerCase() : 'medium';
+    const desc = document.getElementById('rtDescriptionInput').value.trim();
 
     try {
-        const res = await fetch('/api/citizen/submit-realtime-frame', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${Auth.getToken()}` },
-            body: formData
-        });
-        const data = await res.json();
+        let res, data;
+
+        if (currentMode === 'camera') {
+            if (!detectionData) throw new Error("No damage detected to submit yet.");
+
+            const formData = new FormData();
+            formData.append('damage_type', typeSelect);
+
+            let subConf = (detectionData.damage_type === typeSelect) ? detectionData.confidence : (severity === 'high' ? 0.8 : 0.5);
+            formData.append('confidence', subConf);
+
+            formData.append('location', gpsData.locationText || '');
+            if (gpsData.lat !== null) {
+                formData.append('latitude', gpsData.lat);
+                formData.append('longitude', gpsData.lng);
+            }
+            if (desc) formData.append('description', desc);
+            if (detectionData.annotated_image) {
+                formData.append('frame_b64', detectionData.annotated_image);
+            }
+
+            res = await fetch('/api/citizen/submit-realtime-frame', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${Auth.getToken()}` },
+                body: formData
+            });
+        }
+
+        data = await res.json();
         if (!res.ok) throw new Error(data.msg || 'Submit failed');
 
-        btn.textContent = '✅ Submitted';
+        btn.innerHTML = `✅ Submitted`;
         status.textContent = `Report #${data.report_id} saved successfully!`;
         status.style.color = '#22c55e';
         status.style.display = 'block';
-        // Clear description after submit
-        document.getElementById('rtDescriptionInput').value = '';
+
+        document.getElementById('detectionIdValue').textContent = `#${data.report_id}`;
+        document.getElementById('statusValue').textContent = "Submitted";
+
+        if (rtIsRunning) stopRealtime();
+
     } catch (err) {
         btn.disabled = false;
-        btn.textContent = '📤 Submit Report';
+        btn.innerHTML = `Submit Report <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>`;
         status.textContent = 'Error: ' + err.message;
-        status.style.color = '#f87171';
+        status.style.color = '#ef4444';
         status.style.display = 'block';
     }
 }
-
-// Global exposure
-window.switchTab = switchTab;
-window.triggerFileInput = triggerFileInput;
-window.handleFileSelect = handleFileSelect;
-window.retakePhoto = retakePhoto;
-window.submitReport = submitReport;
-window.triggerVideoInput = triggerVideoInput;
-window.handleVideoSelect = handleVideoSelect;
-window.processVideo = processVideo;
-window.resetVideoTab = resetVideoTab;
-window.startRealtime = startRealtime;
-window.stopRealtime = stopRealtime;
-window.downloadAnnotatedImage = downloadAnnotatedImage;
-window.downloadAnnotatedVideo = downloadAnnotatedVideo;
-window.switchCamera = switchCamera;
-window.submitVideoReport = submitVideoReport;
-window.submitRealtimeReport = submitRealtimeReport;
