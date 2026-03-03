@@ -5,13 +5,18 @@
  */
 function initNavigation() {
     const currentPage = window.location.pathname.split('/').pop() || 'dashboard.html';
-    const navLinks = document.querySelectorAll('.nav-link, .nav-item');
+    const navLinks = document.querySelectorAll('.nav-link, .nav-item, .top-nav-link, .mobile-nav__link');
 
     navLinks.forEach(link => {
-        const linkPage = link.getAttribute('href').split('/').pop();
+        const linkHref = link.getAttribute('href');
+        if (!linkHref) return;
+        
+        const linkPage = linkHref.split('/').pop();
         if (linkPage === currentPage) {
             link.classList.add('active');
         } else {
+            // Only remove if it's not a static active class that might be needed
+            // But usually we want dynamic highlighting
             link.classList.remove('active');
         }
     });
@@ -62,6 +67,21 @@ function toggleProfileMenu() {
     const menu = document.getElementById('profileMenu');
     if (menu) {
         menu.classList.toggle('active');
+    }
+}
+
+/**
+ * Toggle mobile navigation drawer
+ */
+function toggleMobileNav() {
+    const nav = document.getElementById('mobileNav');
+    const overlay = document.getElementById('mobileNavOverlay');
+    const btn = document.getElementById('hamburgerBtn');
+    
+    if (nav && overlay && btn) {
+        const isOpen = nav.classList.toggle('active');
+        overlay.classList.toggle('active', isOpen);
+        btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
     }
 }
 

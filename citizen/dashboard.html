@@ -10,6 +10,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/common.css">
     <link rel="stylesheet" href="styles/dashboard.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
@@ -36,10 +37,12 @@
                         <rect x="18" y="9" width="5" height="13" rx="1.5" fill="#2563eb" opacity="0.5" />
                     </svg>
                 </div>
-                <span class="top-bar__title">Road Damage Detection</span>
+                <span class="top-bar__title">SafeStreets</span>
             </div>
             <nav class="top-bar__nav" role="navigation" aria-label="Main navigation">
                 <a href="dashboard.html" class="top-nav-link active" id="nav-dashboard">Dashboard</a>
+                <a href="tracking.html" class="top-nav-link" id="nav-tracking">Track Reports</a>
+                <a href="report-damage.html" class="top-nav-link" id="nav-report">Report Damage</a>
             </nav>
             <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleMobileNav()" aria-label="Toggle navigation"
                 aria-expanded="false">
@@ -397,6 +400,8 @@
     <!-- Mobile Nav Drawer -->
     <div class="mobile-nav" id="mobileNav" role="navigation" aria-label="Mobile navigation">
         <a href="dashboard.html" class="mobile-nav__link active">Dashboard</a>
+        <a href="tracking.html" class="mobile-nav__link">Track Reports</a>
+        <a href="report-damage.html" class="mobile-nav__link">Report Damage</a>
     </div>
     <div class="mobile-nav-overlay" id="mobileNavOverlay" onclick="toggleMobileNav()"></div>
 
@@ -406,17 +411,10 @@
     <script src="../shared/auth.js"></script>
     <script src="scripts/dashboard.js"></script>
     <script>
+        document.addEventListener('DOMContentLoaded', initNavigation);
         document.getElementById('profileAvatar').addEventListener('keydown', function (e) {
             if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleProfileMenu(); }
         });
-        function toggleMobileNav() {
-            var nav = document.getElementById('mobileNav');
-            var overlay = document.getElementById('mobileNavOverlay');
-            var btn = document.getElementById('hamburgerBtn');
-            var isOpen = nav.classList.toggle('active');
-            overlay.classList.toggle('active', isOpen);
-            btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-        }
     </script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>

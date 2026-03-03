@@ -9,23 +9,31 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/common.css">
     <link rel="stylesheet" href="styles/tracking.css">
 </head>
 
 <body>
-    <!-- =========================================================
-         TOP BAR
+<!-- =========================================================
+         TOP BAR (with inline navigation)
     ========================================================== -->
     <header class="top-bar">
-        <div class="top-bar__brand">
-            <div class="top-bar__logo">
-                <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
-                    <rect x="2" y="6" width="5" height="16" rx="1.5" fill="#2563eb" />
-                    <rect x="10" y="2" width="5" height="20" rx="1.5" fill="#2563eb" opacity="0.7" />
-                    <rect x="18" y="9" width="5" height="13" rx="1.5" fill="#2563eb" opacity="0.5" />
-                </svg>
+        <div class="top-bar__left">
+            <div class="top-bar__brand">
+                <div class="top-bar__logo">
+                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+                        <rect x="2" y="6" width="5" height="16" rx="1.5" fill="#2563eb" />
+                        <rect x="10" y="2" width="5" height="20" rx="1.5" fill="#2563eb" opacity="0.7" />
+                        <rect x="18" y="9" width="5" height="13" rx="1.5" fill="#2563eb" opacity="0.5" />
+                    </svg>
+                </div>
+                                <span class="top-bar__title">SafeStreets</span>
             </div>
-            <span class="top-bar__title">Road Damage Detection</span>
+            <nav class="top-bar__nav" role="navigation" aria-label="Main navigation">
+                <a href="dashboard.html" class="top-nav-link" id="nav-dashboard">Dashboard</a>
+                <a href="tracking.html" class="top-nav-link active" id="nav-tracking">Track Reports</a>
+                <a href="report-damage.html" class="top-nav-link" id="nav-report">Report Damage</a>
+            </nav>
             <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleMobileNav()" aria-label="Toggle navigation"
                 aria-expanded="false">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -36,8 +44,11 @@
                 </svg>
             </button>
         </div>
-        <div class="top-bar__actions">
-            <!-- Profile Avatar -->
+        <div class="top-bar__right">
+            <div class="top-bar__user-info">
+                <span class="top-bar__user-role">citizen</span>
+                <span class="top-bar__user-name" id="topBarUserName">John Doe</span>
+            </div>
             <div class="profile-container">
                 <div class="top-bar__avatar" id="profileAvatar" onclick="toggleProfileMenu()" aria-label="Account menu"
                     role="button" tabindex="0">
@@ -68,16 +79,16 @@
     </header>
 
     <!-- =========================================================
-         NAVIGATION TABS
-    ========================================================== -->
-    <nav class="nav-bar" role="navigation" aria-label="Main navigation">
-        <a href="dashboard.html" class="nav-link">Dashboard</a>
-    </nav>
-
-    <!-- =========================================================
          MAIN CONTENT
     ========================================================== -->
     <main class="page-wrapper">
+
+    <div class="mobile-nav" id="mobileNav" role="navigation" aria-label="Mobile navigation">
+        <a href="dashboard.html" class="mobile-nav__link">Dashboard</a>
+        <a href="tracking.html" class="mobile-nav__link active">Track Reports</a>
+        <a href="report-damage.html" class="mobile-nav__link">Report Damage</a>
+    </div>
+    <div class="mobile-nav-overlay" id="mobileNavOverlay" onclick="toggleMobileNav()"></div>
 
         <!-- Page Header -->
         <div class="page-header">
@@ -105,7 +116,7 @@
                         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <polyline points="15 18 9 12 15 6" />
                     </svg>
-                    Back to All Reports
+                    Back to Dashboard
                 </button>
             </div>
 
@@ -232,28 +243,15 @@
         </div>
     </div>
 
-    <!-- Mobile Nav Drawer -->
-    <div class="mobile-nav" id="mobileNav" role="navigation" aria-label="Mobile navigation">
-        <a href="dashboard.html" class="mobile-nav__link">Dashboard</a>
-    </div>
-    <div class="mobile-nav-overlay" id="mobileNavOverlay" onclick="toggleMobileNav()"></div>
-
     <script src="../shared/navigation.js"></script>
     <script src="../shared/modal.js"></script>
     <script src="../shared/auth.js"></script>
     <script src="scripts/tracking.js"></script>
     <script>
+        document.addEventListener('DOMContentLoaded', initNavigation);
         document.getElementById('profileAvatar').addEventListener('keydown', function (e) {
             if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleProfileMenu(); }
         });
-        function toggleMobileNav() {
-            var nav = document.getElementById('mobileNav');
-            var overlay = document.getElementById('mobileNavOverlay');
-            var btn = document.getElementById('hamburgerBtn');
-            var isOpen = nav.classList.toggle('active');
-            overlay.classList.toggle('active', isOpen);
-            btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-        }
     </script>
 </body>
 
