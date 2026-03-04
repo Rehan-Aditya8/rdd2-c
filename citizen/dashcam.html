@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles/common.css">
-    <link rel="stylesheet" href="styles/report-damage.css">
+    <link rel="stylesheet" href="styles/dashcam.css">
 </head>
 
 <body>
@@ -92,7 +92,7 @@
     <div class="mobile-nav-overlay" id="mobileNavOverlay" onclick="toggleMobileNav()"></div>
         <div class="page-header">
             <div class="page-header__text">
-                <h1 class="page-header__title">Report New Damage</h1>
+                <h1 class="page-header__title">Dashcam Preview</h1>
                 <p class="page-header__subtitle">Use your camera for real-time road damage detection.</p>
             </div>
         </div>
@@ -172,8 +172,8 @@
 
                     <!-- Controls -->
                     <div class="rt-controls">
-                        <button class="btn btn-primary" id="rtStartBtn" onclick="startRealtime()">▶️ Start
-                            Detection</button>
+                        <!-- <button class="btn btn-primary" id="rtStartBtn" onclick="startRealtime()">▶️ Start
+                            Detection</button> -->
                         <button class="btn btn-secondary" id="rtStopBtn" onclick="stopRealtime()"
                             style="display:none;">⏹️ Stop</button>
                         <button class="btn btn-secondary" id="rtSwitchBtn" onclick="switchCamera()"
@@ -205,7 +205,7 @@
     <script src="../shared/navigation.js"></script>
     <script src="../shared/modal.js"></script>
     <script src="../shared/auth.js"></script>
-    <script src="scripts/report-damage.js"></script>
+    <script src="scripts/dashcam.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', initNavigation);
         document.getElementById('profileAvatar').addEventListener('keydown', function (e) {

@@ -119,146 +119,147 @@ def detect_frame():
         return jsonify({"msg": str(e)}), 500
 
 
+
 # =====================================================
 # 🎥 VIDEO FILE DETECT (FULL VIDEO — GPU BATCH INFERENCE)
 # =====================================================
-@citizen_bp.route('/detect-video', methods=['POST'])
-def detect_video():
-    """
-    Accepts a video file upload.
-    Runs YOLO on EVERY frame (GPU stream=True), writes a fully annotated
-    output MP4, saves a DB report, and returns stats + a token to fetch the video.
-    """
-    if 'video' not in request.files:
-        return jsonify({"msg": "No video file provided"}), 400
+# @citizen_bp.route('/detect-video', methods=['POST'])
+# def detect_video():
+#     """
+#     Accepts a video file upload.
+#     Runs YOLO on EVERY frame (GPU stream=True), writes a fully annotated
+#     output MP4, saves a DB report, and returns stats + a token to fetch the video.
+#     """
+#     if 'video' not in request.files:
+#         return jsonify({"msg": "No video file provided"}), 400
 
-    file = request.files['video']
-    if file.filename == '':
-        return jsonify({"msg": "Empty filename"}), 400
+#     file = request.files['video']
+#     if file.filename == '':
+#         return jsonify({"msg": "Empty filename"}), 400
 
-    allowed_exts = {'mp4', 'avi', 'mov', 'mkv'}
-    ext = file.filename.rsplit('.', 1)[-1].lower()
-    if ext not in allowed_exts:
-        return jsonify({"msg": "Invalid video format. Allowed: mp4, avi, mov, mkv"}), 400
+#     allowed_exts = {'mp4', 'avi', 'mov', 'mkv'}
+#     ext = file.filename.rsplit('.', 1)[-1].lower()
+#     if ext not in allowed_exts:
+#         return jsonify({"msg": "Invalid video format. Allowed: mp4, avi, mov, mkv"}), 400
 
-    user_id = get_jwt_identity()
+#     user_id = get_jwt_identity()
 
-    # Location fields (optional)
-    location   = request.form.get('location')
-    latitude   = request.form.get('latitude', type=float)
-    longitude  = request.form.get('longitude', type=float)
+#     # Location fields (optional)
+#     location   = request.form.get('location')
+#     latitude   = request.form.get('latitude', type=float)
+#     longitude  = request.form.get('longitude', type=float)
 
-    temp_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'temp')
-    os.makedirs(temp_dir, exist_ok=True)
+#     temp_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'temp')
+#     os.makedirs(temp_dir, exist_ok=True)
 
-    token = f"annotated_{user_id}_{int(time.time())}"
-    temp_input  = os.path.join(temp_dir, f"input_{token}.{ext}")
-    temp_output = os.path.join(temp_dir, f"{token}.mp4")
+#     token = f"annotated_{user_id}_{int(time.time())}"
+#     temp_input  = os.path.join(temp_dir, f"input_{token}.{ext}")
+#     temp_output = os.path.join(temp_dir, f"{token}.mp4")
 
-    file.save(temp_input)
+#     file.save(temp_input)
 
-    try:
-        stats = detect_video_to_file(temp_input, temp_output)
-        stats["video_token"] = token
+#     try:
+#         stats = detect_video_to_file(temp_input, temp_output)
+#         stats["video_token"] = token
         
-        # No auto-save. User must click "Submit Report".
-        return jsonify(stats), 200
+#         # No auto-save. User must click "Submit Report".
+#         return jsonify(stats), 200
 
-    except Exception as e:
-        try:
-            os.remove(temp_output)
-        except Exception:
-            pass
-        return jsonify({"msg": str(e)}), 500
-    finally:
-        try:
-            os.remove(temp_input)
-        except Exception:
-            pass
+#     except Exception as e:
+#         try:
+#             os.remove(temp_output)
+#         except Exception:
+#             pass
+#         return jsonify({"msg": str(e)}), 500
+#     finally:
+#         try:
+#             os.remove(temp_input)
+#         except Exception:
+#             pass
 
 
 # =====================================================
 # 📥 SERVE ANNOTATED VIDEO
 # =====================================================
-@citizen_bp.route('/get-video/<token>', methods=['GET'])
-def get_video(token):
-    """
-    Serves the annotated output video for a given token.
-    Cleans up the temp file after sending.
-    """
-    # Sanitize token — only allow safe characters
-    import re
-    if not re.match(r'^[\w\-]+$', token):
-        return jsonify({"msg": "Invalid token"}), 400
+# @citizen_bp.route('/get-video/<token>', methods=['GET'])
+# def get_video(token):
+#     """
+#     Serves the annotated output video for a given token.
+#     Cleans up the temp file after sending.
+#     """
+#     # Sanitize token — only allow safe characters
+#     import re
+#     if not re.match(r'^[\w\-]+$', token):
+#         return jsonify({"msg": "Invalid token"}), 400
 
-    temp_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'temp')
-    video_path = os.path.join(temp_dir, f"{token}.mp4")
+#     temp_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'temp')
+#     video_path = os.path.join(temp_dir, f"{token}.mp4")
 
-    if not os.path.exists(video_path):
-        return jsonify({"msg": "Video not found or already downloaded"}), 404
+#     if not os.path.exists(video_path):
+#         return jsonify({"msg": "Video not found or already downloaded"}), 404
 
-    def generate():
-        with open(video_path, 'rb') as f:
-            while True:
-                chunk = f.read(65536)
-                if not chunk:
-                    break
-                yield chunk
+#     def generate():
+#         with open(video_path, 'rb') as f:
+#             while True:
+#                 chunk = f.read(65536)
+#                 if not chunk:
+#                     break
+#                 yield chunk
 
-    from flask import Response
-    return Response(
-        generate(),
-        mimetype='video/mp4',
-        headers={
-            'Content-Disposition': 'attachment; filename="pothole_detection.mp4"',
-            'Content-Length': str(os.path.getsize(video_path))
-        }
-    )
+#     from flask import Response
+#     return Response(
+#         generate(),
+#         mimetype='video/mp4',
+#         headers={
+#             'Content-Disposition': 'attachment; filename="pothole_detection.mp4"',
+#             'Content-Length': str(os.path.getsize(video_path))
+#         }
+#     )
 
 
 # =====================================================
 # 📤 SUBMIT VIDEO REPORT (manual submit after analysis)
 # =====================================================
-@citizen_bp.route('/submit-video', methods=['POST'])
-def submit_video_report():
-    """
-    Saves a damage report for a video detection result.
-    Accepts JSON: { damage_type, confidence, location, latitude, longitude, description }
-    """
-    data = request.get_json()
-    if not data:
-        return jsonify({"msg": "No data provided"}), 400
+# @citizen_bp.route('/submit-video', methods=['POST'])
+# def submit_video_report():
+#     """
+#     Saves a damage report for a video detection result.
+#     Accepts JSON: { damage_type, confidence, location, latitude, longitude, description }
+#     """
+#     data = request.get_json()
+#     if not data:
+#         return jsonify({"msg": "No data provided"}), 400
 
-    user_id = get_jwt_identity()
-    damage_type = data.get('damage_type')
-    confidence  = data.get('confidence', 0.0)
+#     user_id = get_jwt_identity()
+#     damage_type = data.get('damage_type')
+#     confidence  = data.get('confidence', 0.0)
 
-    if not damage_type or damage_type == 'No Damage':
-        return jsonify({"msg": "No damage detected — nothing to submit"}), 400
+#     if not damage_type or damage_type == 'No Damage':
+#         return jsonify({"msg": "No damage detected — nothing to submit"}), 400
 
-    if confidence >= 0.8:
-        severity = "high"
-    elif confidence >= 0.5:
-        severity = "medium"
-    else:
-        severity = "low"
+#     if confidence >= 0.8:
+#         severity = "high"
+#     elif confidence >= 0.5:
+#         severity = "medium"
+#     else:
+#         severity = "low"
 
-    report = DamageReport(
-        citizen_id=user_id,
-        image_path="VIDEO_REPORT",  # Placeholder to satisfy NOT NULL constraint
-        location=data.get('location'),
-        latitude=data.get('latitude'),
-        longitude=data.get('longitude'),
-        detected_damage_type=damage_type,
-        confidence_score=round(float(confidence), 3),
-        severity=severity,
-        status="submitted"
-    )
-    db.session.add(report)
-    db.session.commit()
-    log_audit(user_id, f"SUBMIT_VIDEO_REPORT {report.id}")
+#     report = DamageReport(
+#         citizen_id=user_id,
+#         image_path="VIDEO_REPORT",  # Placeholder to satisfy NOT NULL constraint
+#         location=data.get('location'),
+#         latitude=data.get('latitude'),
+#         longitude=data.get('longitude'),
+#         detected_damage_type=damage_type,
+#         confidence_score=round(float(confidence), 3),
+#         severity=severity,
+#         status="submitted"
+#     )
+#     db.session.add(report)
+#     db.session.commit()
+#     log_audit(user_id, f"SUBMIT_VIDEO_REPORT {report.id}")
 
-    return jsonify({"msg": "Report submitted successfully", "report_id": report.id}), 201
+#     return jsonify({"msg": "Report submitted successfully", "report_id": report.id}), 201
 
 
 # =====================================================

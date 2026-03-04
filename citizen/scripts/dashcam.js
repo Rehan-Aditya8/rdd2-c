@@ -14,10 +14,15 @@ let gpsData = { lat: null, lng: null, locationText: 'Acquiring location...' };
 // =====================================================
 // INIT
 // =====================================================
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     Auth.requireRole('citizen');
     initReportForm();
     initRealtimeTab();
+
+    // Auto start dashcam detection
+    setTimeout(() => {
+        startRealtime('environment'); // start with back camera
+    }, 500);
 });
 
 // =====================================================
@@ -51,27 +56,41 @@ function initReportForm() {
         if (rtLocDisplay) rtLocDisplay.textContent = text;
     }
 
-    if ("geolocation" in navigator) {
-        setAllLocationDisplays('Acquiring GPS...');
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const { latitude, longitude } = position.coords;
-                gpsData.lat = latitude;
-                gpsData.lng = longitude;
-                gpsData.locationText = `Lat: ${latitude.toFixed(5)}, Lng: ${longitude.toFixed(5)}`;
-                setAllLocationDisplays(gpsData.locationText);
-            },
-            (error) => {
-                gpsData.locationText = 'Location permission REQUIRED';
-                setAllLocationDisplays(gpsData.locationText);
-                showAlert("Location Required", "Please enable GPS and allow precise location.", "warning");
-            },
-            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-        );
-    } else {
+    if (!("geolocation" in navigator)) {
         gpsData.locationText = 'Geolocation not supported';
         setAllLocationDisplays(gpsData.locationText);
+        return;
     }
+
+    setAllLocationDisplays('Acquiring GPS...');
+
+    const handlePosition = (position) => {
+        const { latitude, longitude } = position.coords;
+        gpsData.lat = latitude;
+        gpsData.lng = longitude;
+        gpsData.locationText = `Lat: ${latitude.toFixed(5)}, Lng: ${longitude.toFixed(5)}`;
+        setAllLocationDisplays(gpsData.locationText);
+    };
+
+    const handleError = () => {
+        gpsData.locationText = 'Location permission REQUIRED';
+        setAllLocationDisplays(gpsData.locationText);
+        showAlert("Location Required", "Please enable GPS and allow precise location.", "warning");
+    };
+
+    // Initial fix to quickly get a location
+    navigator.geolocation.getCurrentPosition(
+        handlePosition,
+        handleError,
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+
+    // Continuous updates while driving so distance-based auto-submit works
+    navigator.geolocation.watchPosition(
+        handlePosition,
+        handleError,
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 1000 }
+    );
 }
 
 // =====================================================
@@ -83,11 +102,25 @@ function initReportForm() {
 let rtStream = null;
 let rtIsRunning = false;
 let rtInterval = null;
+let rtRequestInFlight = false;
 let rtTotalDetections = 0;
 let rtFramesSent = 0;
 let rtCanvas = null;
 let rtCtx = null;
 let rtCurrentFacingMode = 'environment'; // 'environment' = back, 'user' = front
+
+// 4 seconds cool down period
+// 4 seconds cool down period
+let rtLastDetectionTime = 0;
+const RT_DETECTION_COOLDOWN = 4000;
+
+// dashcam auto report session
+let rtDetectionSession = null;
+let rtSessionStartTime = null;
+
+// Interval after which dashcam detections are grouped into a single report
+const RT_REPORT_INTERVAL = 30000; // 30 seconds
+
 
 function initRealtimeTab() {
     rtCanvas = document.createElement('canvas');
@@ -117,7 +150,7 @@ async function startRealtime(facingMode) {
     document.getElementById('liveBadge').style.display = 'flex';
     document.getElementById('detectionOverlay').style.display = 'block';
 
-    document.getElementById('rtStartBtn').style.display = 'none';
+    // document.getElementById('rtStartBtn').style.display = 'none';
     document.getElementById('rtStopBtn').style.display = 'block';
     document.getElementById('rtSwitchBtn').style.display = 'block';
     document.getElementById('rtStatus').textContent = 'Active';
@@ -132,17 +165,23 @@ async function startRealtime(facingMode) {
         rtCanvas.width = video.videoWidth;
         rtCanvas.height = video.videoHeight;
         rtCtx = rtCanvas.getContext('2d');
-        rtInterval = setInterval(sendRealtimeFrame, 100); // 5 fps
+        rtInterval = setInterval(sendRealtimeFrame, 100); // 5 FPS.
     };
 }
 
 async function sendRealtimeFrame() {
     if (!rtIsRunning) return;
 
-    const video = document.getElementById('webcamVideo');
-    if (video.readyState < 2) return; // not ready yet
+    if (rtRequestInFlight) return;
+    rtRequestInFlight = true;
 
-    // Capture frame
+    const video = document.getElementById('webcamVideo');
+
+    if (video.readyState < 2) {
+        rtRequestInFlight = false;
+        return;
+    }
+
     rtCtx.drawImage(video, 0, 0, rtCanvas.width, rtCanvas.height);
     const frameData = rtCanvas.toDataURL('image/jpeg', 0.7);
 
@@ -150,7 +189,7 @@ async function sendRealtimeFrame() {
     document.getElementById('rtFrames').textContent = rtFramesSent;
 
     try {
-        const res = await fetch("/api/citizen/detect-frame", {
+        const res = await fetch("/api/dashcam/detect-frame", {
             method: "POST",
             headers: {
                 "Authorization": `Bearer ${Auth.getToken()}`,
@@ -165,18 +204,64 @@ async function sendRealtimeFrame() {
         });
 
         const data = await res.json();
-        if (!res.ok) return;
 
-        updateRealtimeOverlay(data);
+        if (res.ok) {
 
-        if (data.detected) {
-            rtTotalDetections++;
-            document.getElementById('rtTotal').textContent = rtTotalDetections;
+            if (data.detected) {
+
+                const now = Date.now();
+
+                if (now - rtLastDetectionTime > RT_DETECTION_COOLDOWN) {
+
+                    rtLastDetectionTime = now;
+
+                    rtTotalDetections++;
+                    document.getElementById('rtTotal').textContent = rtTotalDetections;
+
+                    updateRealtimeOverlay(data);
+
+                    const currentLat = gpsData.lat;
+                    const currentLng = gpsData.lng;
+
+                    if (!currentLat || !currentLng) return;
+
+                    if (!rtDetectionSession || data.confidence > rtDetectionSession.confidence) {
+
+                        rtDetectionSession = {
+                            damage_type: data.damage_type,
+                            confidence: data.confidence,
+                            annotated_image: data.annotated_image
+                        };
+
+                        rtSessionStartTime = Date.now();
+
+                        console.log("Detection session started");
+
+                        return;
+                    }
+
+                    const elapsed = Date.now() - rtSessionStartTime;
+
+                    if (elapsed >= RT_REPORT_INTERVAL) {
+
+                        console.log("Auto submitting dashcam report after 30 seconds");
+
+                        autoSubmitDashcamReport(rtDetectionSession);
+
+                        rtDetectionSession = null;
+                        rtSessionStartTime = null;
+                    }
+                }
+
+            } else {
+                updateRealtimeOverlay(data);
+            }
         }
 
     } catch (err) {
-        // Silently ignore network errors during realtime
         console.warn("Realtime frame error:", err);
+    } finally {
+        rtRequestInFlight = false;
     }
 }
 
@@ -212,6 +297,42 @@ function updateRealtimeOverlay(data) {
         document.getElementById('rtLastDetectionCard').style.display = 'block';
     } else {
         overlay.innerHTML = `<span class="detection-label no-damage">✓ No Damage</span>`;
+    }
+}
+
+async function autoSubmitDashcamReport(session) {
+
+    const formData = new FormData();
+
+    formData.append("damage_type", session.damage_type);
+    formData.append("confidence", session.confidence);
+    formData.append("location", gpsData.locationText || "");
+    formData.append("latitude", gpsData.lat);
+    formData.append("longitude", gpsData.lng);
+
+    if (session.annotated_image) {
+        formData.append("frame_b64", session.annotated_image);
+    }
+
+    try {
+
+        const res = await fetch("/api/citizen/submit-realtime-frame", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${Auth.getToken()}`
+            },
+            body: formData
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+            console.log("Dashcam auto report submitted:", data.report_id);
+            showToast("Dashcam report auto-submitted");
+        }
+
+    } catch (err) {
+        console.warn("Auto submit failed:", err);
     }
 }
 
@@ -453,6 +574,23 @@ async function submitRealtimeReport() {
         status.style.color = '#f87171';
         status.style.display = 'block';
     }
+}
+
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371000; // meters
+    const toRad = x => x * Math.PI / 180;
+
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+
+    const a =
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+        Math.sin(dLon/2) * Math.sin(dLon/2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+    return R * c;
 }
 
 // Global exposure
