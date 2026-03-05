@@ -1,0 +1,13 @@
+# Python
+__pycache__/
+*.pyc
+
+# Uploads
+backend/uploads/
+backend/uploads/temp/
+
+# Environment
+.env
+
+# VSCode
+.vscode/
