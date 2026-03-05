@@ -132,7 +132,7 @@ async function startRealtime(facingMode) {
         rtCanvas.width = video.videoWidth;
         rtCanvas.height = video.videoHeight;
         rtCtx = rtCanvas.getContext('2d');
-        rtInterval = setInterval(sendRealtimeFrame, 1000); // every 1 second
+        rtInterval = setInterval(sendRealtimeFrame, 100); // 5 fps
     };
 }
 
@@ -282,7 +282,7 @@ async function switchCamera() {
             rtCanvas.width = video.videoWidth;
             rtCanvas.height = video.videoHeight;
             rtCtx = rtCanvas.getContext('2d');
-            rtInterval = setInterval(sendRealtimeFrame, 1000);
+            rtInterval = setInterval(sendRealtimeFrame, 100);
             switchBtn.disabled = false;
         };
     } catch (err) {

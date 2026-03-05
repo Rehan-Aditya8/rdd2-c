@@ -411,3 +411,58 @@ def detect_video_full(video_path):
         "top_damage": top_damage,
         "best_annotated_frame": best_annotated_b64
     }
+
+
+def detect_damage_with_frame(frame):
+    """
+    Fast detection for realtime dashcam.
+    Accepts a numpy frame instead of an image path.
+    Returns:
+        damage_type (str)
+        confidence (float)
+        annotated_image_b64 (str)
+    """
+    import base64
+    import cv2
+
+    global model
+    if model is None:
+        load_model()
+
+    if model is None:
+        logger.warning("Detection failed: Model is not loaded.")
+        return "Model Error", 0.0, None
+
+    try:
+        # Run YOLO directly on frame
+        results = model(frame, imgsz=416, conf=0.2, verbose=False)
+
+        best_class = "No Damage"
+        best_conf = 0.0
+        annotated_b64 = None
+
+        for r in results:
+
+            if hasattr(r, 'boxes') and r.boxes is not None and len(r.boxes):
+
+                for box in r.boxes:
+                    conf = float(box.conf[0])
+                    cls_id = int(box.cls[0])
+                    class_name = model.names[cls_id]
+
+                    if conf > best_conf:
+                        best_conf = conf
+                        best_class = class_name
+
+            # Create annotated frame
+            annotated_bgr = r.plot()
+
+            # Encode annotated frame to base64
+            _, buf = cv2.imencode('.jpg', annotated_bgr, [cv2.IMWRITE_JPEG_QUALITY, 85])
+            annotated_b64 = base64.b64encode(buf).decode('utf-8')
+
+        return best_class, best_conf, annotated_b64
+
+    except Exception as e:
+        logger.error(f"Error during frame detection: {e}")
+        return "Detection Error", 0.0, None 

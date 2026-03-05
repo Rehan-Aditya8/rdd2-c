@@ -208,7 +208,124 @@
     padding: 2rem;
 }
 
+/* Location search (Create Report modal) */
+.location-search {
+    margin-top: 1.5rem;
+    text-align: left;
+}
+
+.location-search-input-wrapper {
+    display: flex;
+    align-items: center;
+    background: #f9fafb;
+    border-radius: 999px;
+    padding: 0.4rem 0.6rem;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
+}
+
+.location-search-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.35rem;
+}
+
+.location-search-input-wrapper input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: 0.9rem;
+    outline: none;
+    color: #0f172a;
+}
+
+.location-search-submit-btn {
+    border: none;
+    background: transparent;
+    padding: 0;
+    margin-left: 0.25rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.location-search-results {
+    margin-top: 0.4rem;
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    max-height: 220px;
+    overflow-y: auto;
+    font-size: 0.85rem;
+    display: none;
+    box-shadow: 0 10px 25px rgba(15, 23, 42, 0.16);
+}
+
+.location-search-item {
+    padding: 0.6rem 0.9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.location-search-item + .location-search-item {
+    border-top: 1px solid #e5e7eb;
+}
+
+.location-search-item-icon {
+    width: 18px;
+    height: 18px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #eff6ff;
+    color: #2563eb;
+    flex-shrink: 0;
+}
+
+.location-search-item-text-main {
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.location-search-item-text-sub {
+    font-size: 0.78rem;
+    color: #6b7280;
+}
+
+.location-search-item:hover {
+    background: #f1f5f9;
+}
+
 /* Spinner removed (now in shared/styles.css) */
+
+.location-search-helper-text {
+    margin-top: 1.5rem;
+    font-size: 0.9rem;
+    color: #4b5563;
+}
+
+.location-map-container {
+    margin-top: 1rem;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+}
+
+.location-map {
+    width: 100%;
+    height: 260px;
+}
+
+.location-submit-btn {
+    margin-top: 1rem;
+    width: 100%;
+}
 
 @media (max-width: 900px) {
     .side-panel {

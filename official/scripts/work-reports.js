@@ -8,6 +8,8 @@ Auth.requireRole('official');
 // =====================================================
 let workReports = [];
 let currentReports = [];
+let locationMap = null;
+let locationMapMarker = null;
 
 // =====================================================
 // INIT
@@ -15,6 +17,8 @@ let currentReports = [];
 document.addEventListener('DOMContentLoaded', () => {
     initDashboard();
     setupDropZone();
+    setupLocationSearch();
+    initLocationMapUI();
 });
 
 async function initDashboard() {
@@ -289,6 +293,175 @@ async function uploadNoticePDF(file) {
         extractionStatus.style.display = 'none';
         document.getElementById('fileInput').value = ''; // Reset
     }
+}
+
+// =====================================================
+// LOCATION SEARCH (NOMINATIM AUTOCOMPLETE)
+// =====================================================
+function setupLocationSearch() {
+    const input = document.getElementById('locationSearchInput');
+    const resultsEl = document.getElementById('locationSearchResults');
+
+    if (!input || !resultsEl) return;
+
+    let debounceTimer = null;
+
+    input.addEventListener('input', () => {
+        const query = input.value.trim();
+        clearTimeout(debounceTimer);
+
+        if (!query) {
+            resultsEl.style.display = 'none';
+            resultsEl.innerHTML = '';
+            return;
+        }
+
+        debounceTimer = setTimeout(() => {
+            fetchLocationSuggestions(query);
+        }, 400);
+    });
+}
+
+async function fetchLocationSuggestions(query) {
+    const resultsEl = document.getElementById('locationSearchResults');
+    if (!resultsEl) return;
+
+    resultsEl.style.display = 'block';
+    resultsEl.innerHTML = '<div class="location-search-item"><span class="location-search-item-text-main">Searching...</span></div>';
+
+    try {
+        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`;
+        const res = await fetch(url, {
+            headers: {
+                'Accept-Language': 'en'
+            }
+        });
+
+        if (!res.ok) {
+            resultsEl.innerHTML = '<div class="location-search-item"><span class="location-search-item-text-main">No results found</span></div>';
+            return;
+        }
+
+        const data = await res.json();
+        if (!Array.isArray(data) || data.length === 0) {
+            resultsEl.innerHTML = '<div class="location-search-item"><span class="location-search-item-text-main">No results found</span></div>';
+            return;
+        }
+
+        resultsEl.innerHTML = data.map(item => {
+            const full = item.display_name || '';
+            const parts = full.split(',');
+            const main = (parts[0] || '').trim();
+            const sub = parts.slice(1).join(',').trim();
+            const safeMain = main.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            const safeSub = sub.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            const safeFull = full.replace(/"/g, '&quot;');
+
+            return `<div class="location-search-item" data-full="${safeFull}" data-lat="${item.lat}" data-lon="${item.lon}">
+                        <span class="location-search-item-icon">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2">
+                                <circle cx="12" cy="10" r="3" />
+                                <path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z" />
+                            </svg>
+                        </span>
+                        <div>
+                            <div class="location-search-item-text-main">${safeMain}</div>
+                            ${safeSub ? `<div class="location-search-item-text-sub">${safeSub}</div>` : ''}
+                        </div>
+                    </div>`;
+        }).join('');
+
+        Array.from(resultsEl.querySelectorAll('.location-search-item')).forEach(el => {
+            el.addEventListener('click', () => {
+                const full = el.getAttribute('data-full') || '';
+                const input = document.getElementById('locationSearchInput');
+                if (input) input.value = full;
+                resultsEl.style.display = 'none';
+                const latStr = el.getAttribute('data-lat') || '';
+                const lonStr = el.getAttribute('data-lon') || '';
+                const lat = parseFloat(latStr);
+                const lon = parseFloat(lonStr);
+                if (!isNaN(lat) && !isNaN(lon)) {
+                    handleLocationSelected(lat, lon, full);
+                }
+            });
+        });
+    } catch (e) {
+        console.error('Location search error:', e);
+        resultsEl.innerHTML = '<div class="location-search-item"><span class="location-search-item-text-main">Error searching location</span></div>';
+    }
+}
+
+
+// =====================================================
+// LOCATION MAP UI
+// =====================================================
+function initLocationMapUI() {
+    const mapContainer = document.getElementById('locationMapContainer');
+    const submitBtn = document.getElementById('locationSubmitBtn');
+    if (mapContainer) {
+        mapContainer.style.display = 'none';
+    }
+    if (submitBtn) {
+        submitBtn.style.display = 'none';
+        submitBtn.addEventListener('click', () => {
+            const input = document.getElementById('locationSearchInput');
+            const value = input ? input.value.trim() : '';
+            if (!value) {
+                showModal('Location Required', 'Please select a location before submitting.');
+                return;
+            }
+            showModal('Location Selected', 'The location has been selected for this work notice.');
+        });
+    }
+}
+
+function handleLocationSelected(lat, lon) {
+    const mapContainer = document.getElementById('locationMapContainer');
+    const submitBtn = document.getElementById('locationSubmitBtn');
+
+    if (mapContainer) {
+        mapContainer.style.display = 'block';
+    }
+    if (submitBtn) {
+        submitBtn.style.display = 'block';
+    }
+
+    showLocationOnMap(lat, lon);
+}
+
+function showLocationOnMap(lat, lon) {
+    const mapEl = document.getElementById('locationMap');
+    if (!mapEl || typeof L === 'undefined') {
+        return;
+    }
+
+    const coords = [lat, lon];
+
+    if (!locationMap) {
+        locationMap = L.map('locationMap', {
+            zoomControl: true,
+            attributionControl: false
+        }).setView(coords, 16);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19
+        }).addTo(locationMap);
+    } else {
+        locationMap.setView(coords, 16);
+    }
+
+    if (locationMapMarker) {
+        locationMapMarker.setLatLng(coords);
+    } else {
+        locationMapMarker = L.marker(coords).addTo(locationMap);
+    }
+
+    setTimeout(() => {
+        if (locationMap) {
+            locationMap.invalidateSize();
+        }
+    }, 150);
 }
 
 

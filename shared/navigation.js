@@ -5,13 +5,18 @@
  */
 function initNavigation() {
     const currentPage = window.location.pathname.split('/').pop() || 'dashboard.html';
-    const navLinks = document.querySelectorAll('.nav-link, .nav-item');
+    const navLinks = document.querySelectorAll('.nav-link, .nav-item, .top-nav-link, .mobile-nav__link');
 
     navLinks.forEach(link => {
-        const linkPage = link.getAttribute('href').split('/').pop();
+        const linkHref = link.getAttribute('href');
+        if (!linkHref) return;
+        
+        const linkPage = linkHref.split('/').pop();
         if (linkPage === currentPage) {
             link.classList.add('active');
         } else {
+            // Only remove if it's not a static active class that might be needed
+            // But usually we want dynamic highlighting
             link.classList.remove('active');
         }
     });
@@ -30,24 +35,26 @@ function initNavigation() {
 }
 
 /**
- * Update profile info from localStorage
+ * Update profile info from localStorage (login details)
  */
 function updateProfileInfo() {
-    const userNameEl = document.querySelector('.user-name');
-    const userRoleEl = document.querySelector('.user-role');
+    const name = localStorage.getItem('user_name') || 'User';
+    const role = localStorage.getItem('role') || '';
+
+    const roleText = role === 'official' ? 'Lead Officer' : role ? role.charAt(0).toUpperCase() + role.slice(1) : '';
+
+    // Update all .user-name elements (profile dropdown)
+    document.querySelectorAll('.user-name').forEach(el => { el.textContent = name; });
+
+    // Update all .user-role elements
+    document.querySelectorAll('.user-role').forEach(el => { if (roleText) el.textContent = roleText; });
+
+    // Update dashboard top bar user name
+    const topBarName = document.getElementById('topBarUserName');
+    if (topBarName) topBarName.textContent = name;
+
+    // Update avatar if present (official portal)
     const headerAvatar = document.getElementById('headerAvatar');
-
-    if (!userNameEl && !userRoleEl && !headerAvatar) return;
-
-    const name = localStorage.getItem('user_name') || 'Official';
-    const role = localStorage.getItem('role') || 'Officer';
-
-    if (userNameEl) userNameEl.textContent = name;
-    if (userRoleEl) {
-        const roleText = role === 'official' ? 'Lead Officer' : role.charAt(0).toUpperCase() + role.slice(1);
-        userRoleEl.textContent = roleText;
-    }
-
     if (headerAvatar) {
         headerAvatar.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=f1f5f9&color=64748b`;
     }
@@ -60,6 +67,21 @@ function toggleProfileMenu() {
     const menu = document.getElementById('profileMenu');
     if (menu) {
         menu.classList.toggle('active');
+    }
+}
+
+/**
+ * Toggle mobile navigation drawer
+ */
+function toggleMobileNav() {
+    const nav = document.getElementById('mobileNav');
+    const overlay = document.getElementById('mobileNavOverlay');
+    const btn = document.getElementById('hamburgerBtn');
+    
+    if (nav && overlay && btn) {
+        const isOpen = nav.classList.toggle('active');
+        overlay.classList.toggle('active', isOpen);
+        btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
     }
 }
 
