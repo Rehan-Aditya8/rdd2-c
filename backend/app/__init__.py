@@ -78,4 +78,7 @@ def create_app(config_class=Config):
     from app.routes import main_bp
     app.register_blueprint(main_bp)
 
+    from app.dashcam import dashcam_bp
+    app.register_blueprint(dashcam_bp)
+
     return app
