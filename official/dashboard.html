@@ -16,7 +16,7 @@
     <!-- Top Bar / Header -->
     <header class="header">
         <div class="logo-area">
-            <div class="logo-icon">
+            <div class="logo-icon ">
                 <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M4 11V1m16 10V1M12 23V1M4 23v-7m16 7v-7" />
                 </svg>
@@ -260,8 +260,11 @@
         <section class="reports-section">
             <header class="section-header">
                 <h2>Recent Reports</h2>
-                <a href="work-reports.html" class="view-all">View All Reports</a>
             </header>
+            <div class="report-source-toggle">
+                <button type="button" class="source-btn" id="sourceCitizenBtn" onclick="setSourceFilter('citizen')">Citizen</button>
+                <button type="button" class="source-btn" id="sourceDashcamBtn" onclick="setSourceFilter('dashcam')">Dashcam</button>
+            </div>
             <div class="table-container">
                 <table class="reports-table">
                     <thead>
@@ -279,6 +282,10 @@
                         <!-- Populated by JS -->
                     </tbody>
                 </table>
+            </div>
+            <div class="table-footer">
+                <div class="table-summary" id="reportsSummary"></div>
+                <div class="pagination" id="reportsPagination"></div>
             </div>
         </section>
     </main>

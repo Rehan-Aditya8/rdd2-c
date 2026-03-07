@@ -261,6 +261,29 @@ body {
     box-shadow: var(--shadow);
 }
 
+.report-source-toggle {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.source-btn {
+    padding: 0.35rem 0.9rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.source-btn.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #ffffff;
+}
+
 .reports-table {
     width: 100%;
     border-collapse: collapse;
@@ -300,6 +323,43 @@ body {
 
 .reports-table tbody tr:hover {
     background: #f8fafc;
+}
+
+.table-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.75rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.pagination {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.page-btn {
+    min-width: 28px;
+    height: 28px;
+    padding: 0 0.5rem;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    color: var(--text-main);
+    font-size: 0.75rem;
+    cursor: pointer;
+}
+
+.page-btn.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #ffffff;
+}
+
+.page-btn.disabled {
+    opacity: 0.5;
+    cursor: default;
 }
 
 /* Status & Priority Pills */

@@ -2,6 +2,9 @@
 
 let allOfficerReports = [];
 let filteredReports = [];
+let currentPage = 1;
+const pageSize = 4;
+let sourceFilter = 'all';
 
 // Initialize dashboard when page loads
 document.addEventListener('DOMContentLoaded', async () => {
@@ -109,10 +112,25 @@ function applyFilters() {
             if (reportDate > end) dateMatch = false;
         }
 
-        return searchMatch && issueTypeMatch && severityMatch && statusMatch && dateMatch;
+        // 5. Source Logic
+        let sourceMatch = true;
+        if (sourceFilter === 'dashcam') {
+            sourceMatch = false;
+        }
+
+        return searchMatch && issueTypeMatch && severityMatch && statusMatch && dateMatch && sourceMatch;
     });
 
+    currentPage = 1;
     renderReportsTable();
+}
+
+function getReportSource(report) {
+    const imageUrl = report.image_url || '';
+    if (imageUrl.indexOf('VIDEO_REPORT') !== -1 || imageUrl.indexOf('rt_submit_') !== -1) {
+        return 'dashcam';
+    }
+    return 'citizen';
 }
 
 /**
@@ -126,7 +144,10 @@ function clearFilters() {
     document.getElementById('statusFilter').value = '';
     document.getElementById('startDateFilter').value = '';
     document.getElementById('endDateFilter').value = '';
+    sourceFilter = 'all';
     filteredReports = [...allOfficerReports];
+    currentPage = 1;
+    updateSourceButtons();
     renderReportsTable();
 }
 
@@ -135,13 +156,34 @@ function clearFilters() {
  */
 function renderReportsTable() {
     const tbody = document.getElementById('reportsTableBody');
+    const summary = document.getElementById('reportsSummary');
+    const pagination = document.getElementById('reportsPagination');
 
-    if (filteredReports.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 2rem;">No reports found matching the filters.</td></tr>';
+    if (!tbody) {
         return;
     }
 
-    tbody.innerHTML = filteredReports.map(report => {
+    if (filteredReports.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 2rem;">No reports found matching the filters.</td></tr>';
+        if (summary) {
+            summary.textContent = 'Showing 0 to 0 of 0 reports';
+        }
+        if (pagination) {
+            pagination.innerHTML = '';
+        }
+        return;
+    }
+
+    const total = filteredReports.length;
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    if (currentPage > totalPages) {
+        currentPage = totalPages;
+    }
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = Math.min(startIndex + pageSize, total);
+    const pageItems = filteredReports.slice(startIndex, endIndex);
+
+    tbody.innerHTML = pageItems.map(report => {
         const severity = (report.severity || 'low').toLowerCase();
         const severityPill = `pill-${severity}`;
         const severityText = severity.charAt(0).toUpperCase() + severity.slice(1);
@@ -206,6 +248,62 @@ function renderReportsTable() {
             </tr>
         `;
     }).join('');
+
+    if (summary) {
+        summary.textContent = 'Showing ' + (startIndex + 1) + ' to ' + endIndex + ' of ' + total + ' reports';
+    }
+
+    if (pagination) {
+        if (totalPages <= 1) {
+            pagination.innerHTML = '';
+        } else {
+            let buttons = '';
+            const prevPage = currentPage - 1;
+            buttons += '<button class="page-btn' + (currentPage === 1 ? ' disabled' : '') + '" onclick="changePage(' + prevPage + ')"' + (currentPage === 1 ? ' disabled' : '') + '>&lt;</button>';
+            for (let i = 1; i <= totalPages; i++) {
+                buttons += '<button class="page-btn' + (i === currentPage ? ' active' : '') + '" onclick="changePage(' + i + ')">' + i + '</button>';
+            }
+            const nextPage = currentPage + 1;
+            buttons += '<button class="page-btn' + (currentPage === totalPages ? ' disabled' : '') + '" onclick="changePage(' + nextPage + ')"' + (currentPage === totalPages ? ' disabled' : '') + '>&gt;</button>';
+            pagination.innerHTML = buttons;
+        }
+    }
+}
+
+function changePage(page) {
+    const totalPages = Math.max(1, Math.ceil(filteredReports.length / pageSize));
+    if (page < 1 || page > totalPages) {
+        return;
+    }
+    currentPage = page;
+    renderReportsTable();
+}
+
+function setSourceFilter(source) {
+    if (sourceFilter === source) {
+        sourceFilter = 'all';
+    } else {
+        sourceFilter = source;
+    }
+    currentPage = 1;
+    updateSourceButtons();
+    applyFilters();
+}
+
+function updateSourceButtons() {
+    const citizenBtn = document.getElementById('sourceCitizenBtn');
+    const dashcamBtn = document.getElementById('sourceDashcamBtn');
+    if (!citizenBtn || !dashcamBtn) {
+        return;
+    }
+    citizenBtn.classList.remove('active');
+    dashcamBtn.classList.remove('active');
+
+    if (sourceFilter === 'citizen') {
+        citizenBtn.classList.add('active');
+    } else if (sourceFilter === 'dashcam') {
+        dashcamBtn.classList.add('active');
+    }
 }
 
 /**
@@ -227,6 +325,8 @@ function formatTimeAgo(date) {
 // Expose functions to window
 window.applyFilters = applyFilters;
 window.clearFilters = clearFilters;
+window.changePage = changePage;
+window.setSourceFilter = setSourceFilter;
 window.viewReport = (id) => {
     const report = allOfficerReports.find(r => r.id === id);
     if (report) openPanel(encodeURIComponent(JSON.stringify(report)));
