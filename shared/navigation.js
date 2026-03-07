@@ -95,13 +95,19 @@ function confirmLogout() {
             'Are you sure you want to log out of the system?',
             (confirmed) => {
                 if (confirmed) {
-                    if (window.Auth && typeof window.Auth.logout === 'function') {
-                        window.Auth.logout();
+                    // Determine which Auth object to use
+                    // Dashcam has its own Auth, other portals use shared Auth
+                    const authObj = window.Auth;
+                    if (authObj && typeof authObj.logout === 'function') {
+                        authObj.logout();
                     } else {
-                        // Fallback in case Auth is not loaded
+                        // Fallback in case Auth is not loaded or missing logout
                         localStorage.removeItem('token');
+                        localStorage.removeItem('device_token');
                         localStorage.removeItem('role');
                         localStorage.removeItem('user_name');
+                        localStorage.removeItem('device_id');
+                        localStorage.removeItem('vehicle_no');
                         window.location.href = '/';
                     }
                 }
@@ -110,7 +116,11 @@ function confirmLogout() {
     } else {
         // Fallback to standard confirm if modal system is not loaded
         if (confirm('Are you sure you want to log out?')) {
-            window.Auth.logout();
+            if (window.Auth && typeof window.Auth.logout === 'function') {
+                window.Auth.logout();
+            } else {
+                window.location.href = '/';
+            }
         }
     }
 }

@@ -26,6 +26,22 @@ class User(db.Model):
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+    
+
+# =====================================================
+# DEVICE MODEL (DASHCAM DEVICES)
+# =====================================================
+class Device(db.Model):
+    __tablename__ = 'devices'
+    __bind_key__ = 'infra_auth_db'   # same DB as users
+
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+
+    vehicle_no = db.Column(db.String(20), nullable=False)
+
+    device_id = db.Column(db.String(50), unique=True, nullable=False, index=True)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
 # =====================================================

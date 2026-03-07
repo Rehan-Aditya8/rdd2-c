@@ -15,7 +15,7 @@ let gpsData = { lat: null, lng: null, locationText: 'Acquiring location...' };
 // INIT
 // =====================================================
 document.addEventListener('DOMContentLoaded', async () => {
-    Auth.requireRole('citizen');
+    Auth.requireAuth();
     initReportForm();
     initRealtimeTab();
 
