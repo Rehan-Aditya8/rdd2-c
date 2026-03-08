@@ -143,20 +143,27 @@ async function startRealtime(facingMode) {
     };
 }
 
+let rtRequestInFlight = false;
+
 async function sendRealtimeFrame() {
-    if (!rtIsRunning) return;
+
+    if (!rtIsRunning || rtRequestInFlight) return;
 
     const video = document.getElementById('webcamVideo');
-    if (video.readyState < 2) return; // not ready yet
 
-    // Capture frame
-    rtCtx.drawImage(video, 0, 0, rtCanvas.width, rtCanvas.height);
-    const frameData = rtCanvas.toDataURL('image/jpeg', 0.7);
+    if (video.readyState < 2) return;
 
-    rtFramesSent++;
-    document.getElementById('rtFrames').textContent = rtFramesSent;
+    rtRequestInFlight = true;
 
     try {
+
+        rtCtx.drawImage(video, 0, 0, rtCanvas.width, rtCanvas.height);
+
+        const frameData = rtCanvas.toDataURL('image/jpeg', 0.6);
+
+        rtFramesSent++;
+        document.getElementById('rtFrames').textContent = rtFramesSent;
+
         const res = await fetch("/api/citizen/detect-frame", {
             method: "POST",
             headers: {
@@ -164,14 +171,12 @@ async function sendRealtimeFrame() {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                frame: frameData,
-                location: gpsData.locationText,
-                latitude: gpsData.lat,
-                longitude: gpsData.lng
+                frame: frameData
             })
         });
 
         const data = await res.json();
+
         if (!res.ok) return;
 
         updateRealtimeOverlay(data);
@@ -182,9 +187,10 @@ async function sendRealtimeFrame() {
         }
 
     } catch (err) {
-        // Silently ignore network errors during realtime
-        console.warn("Realtime frame error:", err);
+        console.warn("Realtime error:", err);
     }
+
+    rtRequestInFlight = false;
 }
 
 // Stores last realtime detection for manual submit

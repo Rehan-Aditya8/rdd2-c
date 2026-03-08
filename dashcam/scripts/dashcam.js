@@ -387,10 +387,10 @@ function updateRealtimeOverlay(data) {
             img.style.display = 'none';
         }
         // Reset submit button state
-        const submitBtn = document.getElementById('rtSubmitBtn');
-        const submitStatus = document.getElementById('rtSubmitStatus');
+        // const submitBtn = document.getElementById('rtSubmitBtn');
+        // const submitStatus = document.getElementById('rtSubmitStatus');
         submitBtn.disabled = false;
-        submitBtn.textContent = '📤 Submit Report';
+        // submitBtn.textContent = '📤 Submit Report';
         submitStatus.style.display = 'none';
         document.getElementById('rtLastDetectionCard').style.display = 'block';
     } else {
