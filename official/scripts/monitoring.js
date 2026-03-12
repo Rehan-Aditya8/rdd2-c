@@ -13,6 +13,7 @@ async function initMonitoring() {
 
     const params = new URLSearchParams(window.location.search);
     const id = params.get('id');
+    const reportType = params.get('type');
 
     if (!id) {
         window.location.href = 'dashboard.html';
@@ -39,7 +40,7 @@ async function initMonitoring() {
         }
 
         loadWorkDetails();
-        
+
         // If persisted, show the success summary directly
         if (savedState) {
             showResolutionSummary();
@@ -72,7 +73,7 @@ function showResolutionSummary() {
                 </div>
             </div>
         `;
-        
+
         // Also update the After image if saved
         const afterImg = document.getElementById('afterPhoto');
         if (afterImg && currentReport.persistedAfterPhoto) {
@@ -82,6 +83,30 @@ function showResolutionSummary() {
 }
 
 async function fetchReportDetails(id) {
+    const params = new URLSearchParams(window.location.search);
+    const reportType = params.get('type');
+
+    if (reportType === 'work') {
+        try {
+            const response = await Auth.fetchWithAuth('/api/official/work-reports');
+            if (response.ok) {
+                const data = await response.json();
+                const workReport = data.find(r => r.id === id);
+                if (workReport) {
+                    currentReport = {
+                        ...workReport,
+                        report_source: 'dashboard',
+                        damage_type: workReport.work_type,
+                        severity: 'N/A'
+                    };
+                }
+            }
+        } catch (e) {
+            console.error("Fetch Work Report Error", e);
+        }
+        return;
+    }
+
     try {
         const response = await Auth.fetchWithAuth(`/api/official/reports/${id}`);
         if (response.ok) {
@@ -100,7 +125,7 @@ async function fetchWorkOrders() {
             // Transform
             workOrdersData = data.map(r => ({
                 id: r.id,
-                reportId: r.id, 
+                reportId: r.id,
                 location: r.location,
                 contractor: (r.contractor && r.contractor.name) || 'Not Assigned',
                 status: r.status === 'resolved' ? 'completed' : (r.status === 'assigned' ? 'in-progress' : 'pending'),
@@ -158,31 +183,31 @@ function renderTimeline() {
     let currentStageIndex = steps.indexOf(currentReport.status);
     if (currentStageIndex === -1) {
         if (currentReport.status === 'verified' || currentReport.status === 'approved') currentStageIndex = 1;
-        else if (currentReport.status === 'assigned') currentStageIndex = 3; 
+        else if (currentReport.status === 'assigned') currentStageIndex = 3;
         else if (currentReport.status === 'in-progress') currentStageIndex = 3;
         else if (currentReport.status === 'resolved') currentStageIndex = 4;
         else if (currentReport.status === 'rejected') currentStageIndex = 0;
         else currentStageIndex = 0;
     } else if (currentReport.status === 'assigned') {
-        currentStageIndex = 3; 
+        currentStageIndex = 3;
     }
 
     const formatDate = (dateStr) => {
         if (!dateStr) return null;
-        return new Date(dateStr).toLocaleString('en-US', { 
-            year: 'numeric', 
-            month: 'numeric', 
-            day: 'numeric', 
-            hour: 'numeric', 
-            minute: 'numeric', 
-            hour12: true 
+        return new Date(dateStr).toLocaleString('en-US', {
+            year: 'numeric',
+            month: 'numeric',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: 'numeric',
+            hour12: true
         });
     };
 
     const timelineData = labels.map((item, idx) => {
         let dateDisplay = 'Pending';
         if (idx <= currentStageIndex) {
-            let timestamp = currentReport.created_at; 
+            let timestamp = currentReport.created_at;
 
             if (idx === 1) {
                 timestamp = currentReport.verified_at || currentReport.created_at;
@@ -236,7 +261,38 @@ function renderStatusIndicator() {
     const indicator = document.getElementById('workStatusIndicator');
     if (!indicator) return;
 
-    if (currentWork) {
+    const params = new URLSearchParams(window.location.search);
+    const reportType = params.get('type');
+
+    if (reportType === 'work' && currentReport) {
+        const uniqueNoticeId = currentReport.notice_id ? currentReport.notice_id : `NTC-${currentReport.id.split('-')[0].substring(0, 8).toUpperCase()}`;
+        const statusText = (currentReport.status || 'pending').charAt(0).toUpperCase() + (currentReport.status || 'pending').slice(1);
+        const statusClass = ['in-progress', 'assigned'].includes(currentReport.status) ? 'in-progress' :
+            (currentReport.status === 'resolved' || currentReport.status === 'completed' ? 'completed' : 'pending');
+
+        indicator.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 1rem;">
+                <div>
+                    <h3 style="margin: 0; color: #1e293b; font-size: 1.2rem;">Notice ID: <span title="${currentReport.id}">${uniqueNoticeId}</span></h3>
+                    <p style="margin: 0.25rem 0 0 0; color: #64748b; font-size: 0.9rem;">Department: ${currentReport.department || 'N/A'}</p>
+                </div>
+                <div class="status-badge ${statusClass}" style="margin: 0;">${statusText}</div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; text-align: left;">
+                <div>
+                    <span style="display: block; font-size: 0.85rem; color: #64748b; margin-bottom: 0.25rem; font-weight: 600; text-transform: uppercase;">Location</span>
+                    <strong style="color: #1e293b; font-size: 1.05rem;">${currentReport.location || 'N/A'}</strong>
+                </div>
+                <div>
+                    <span style="display: block; font-size: 0.85rem; color: #64748b; margin-bottom: 0.25rem; font-weight: 600; text-transform: uppercase;">Work Type</span>
+                    <strong style="color: #1e293b; font-size: 1.05rem;">${currentReport.work_type || 'N/A'}</strong>
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    if (currentWork && !reportType) {
         indicator.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 1rem;">
                 <div>
@@ -263,7 +319,7 @@ function renderStatusIndicator() {
     } else if (currentReport) {
         const reportIdFull = currentReport.id || '';
         const reportIdDisplay = reportIdFull ? reportIdFull.split('-')[0].substring(0, 8) : 'Unknown';
-        
+
         const statusText = (currentReport.status || 'pending').charAt(0).toUpperCase() + (currentReport.status || 'pending').slice(1);
         const statusClass = ['in-progress', 'assigned'].includes(currentReport.status) ? 'in-progress' :
             (currentReport.status === 'resolved' ? 'completed' : 'pending');
@@ -397,9 +453,13 @@ function selectWork(workId) {
 function markCompleted() {
     if (!currentWork) return;
 
+    const params = new URLSearchParams(window.location.search);
+    const reportType = params.get('type');
+    const redirectUrl = reportType === 'work' ? 'work-reports.html' : 'dashboard.html';
+
     showConfirm('Confirm Completion', `Mark work order ${currentWork.id} as completed?`, () => {
-        showAlert('Work Completed', `Work order ${currentWork.id} has been marked as completed.\n\nRedirecting to dashboard...`, 'success', () => {
-            window.location.href = 'dashboard.html';
+        showAlert('Work Completed', `Work order ${currentWork.id} has been marked as completed.\n\nRedirecting...`, 'success', () => {
+            window.location.href = redirectUrl;
         });
     });
 }
@@ -418,27 +478,27 @@ function handleAfterImageUpload(event) {
     }
 
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = function (e) {
         const afterImg = document.getElementById('afterPhoto');
         if (afterImg) {
             const imageData = e.target.result;
             afterImg.src = imageData;
-            
+
             // Store temporarily in currentReport for saving later
             if (!currentReport) currentReport = {};
             currentReport.tempAfterPhoto = imageData;
-            
+
             // Enable verification checkbox
             const checkbox = document.getElementById('completionCheckbox');
             const wrapper = document.getElementById('checkboxWrapper');
             const helper = document.getElementById('uploadHelperText');
-            
+
             if (checkbox && wrapper) {
                 checkbox.disabled = false;
                 wrapper.classList.remove('disabled');
                 if (helper) helper.style.display = 'none';
             }
-            
+
             showAlert('Success', 'Repair photo uploaded. You can now verify the report.', 'success');
         }
     };
@@ -464,7 +524,7 @@ async function submitFinalReport() {
     const description = descriptionField ? descriptionField.value : '';
     const officerName = localStorage.getItem('user_name') || 'Official';
     const resolvedAt = new Date().toISOString();
-    
+
     // Safety check for ID
     const reportId = (currentReport && currentReport.id) || (new URLSearchParams(window.location.search)).get('id');
 
@@ -479,7 +539,7 @@ async function submitFinalReport() {
             currentReport.status = 'resolved';
             currentReport.resolved_at = resolvedAt;
         }
-        
+
         // Save to IndexedDB for persistence (resolves QuotaExceededError)
         const stateToSave = {
             status: 'resolved',
@@ -489,11 +549,11 @@ async function submitFinalReport() {
             afterPhoto: (currentReport && currentReport.tempAfterPhoto) || null
         };
         await ReportStorage.save(reportId, stateToSave);
-        
+
         // Refresh UI
         renderTimeline();
         renderStatusIndicator();
-        
+
         // Show success summary
         if (currentReport) {
             currentReport.persistedDescription = description;
@@ -501,9 +561,9 @@ async function submitFinalReport() {
             currentReport.persistedAfterPhoto = stateToSave.afterPhoto;
         }
         showResolutionSummary();
-        
+
         showAlert('Success', 'Report has been marked as completed!', 'success');
-        
+
     } catch (error) {
         console.error('Error submitting report:', error);
         showAlert('Error', 'Failed to update report status.', 'error');

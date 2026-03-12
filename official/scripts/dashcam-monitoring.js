@@ -40,7 +40,7 @@ async function initMonitoring() {
         }
 
         loadWorkDetails();
-        
+
         // If persisted, show resolution summary
         if (savedState) {
             showResolutionSummary();
@@ -73,7 +73,7 @@ function showResolutionSummary() {
                 </div>
             </div>
         `;
-        
+
         // Also update the After images if saved
         const afterImg = document.getElementById('afterPhoto');
         const afterImgLast = document.getElementById('afterPhotoLast');
@@ -105,7 +105,7 @@ async function fetchWorkOrders() {
             // Transform
             workOrdersData = data.map(r => ({
                 id: r.id,
-                reportId: r.id, 
+                reportId: r.id,
                 location: r.location,
                 contractor: (r.contractor && r.contractor.name) || 'Not Assigned',
                 status: r.status === 'resolved' ? 'completed' : (r.status === 'assigned' ? 'in-progress' : 'pending'),
@@ -163,30 +163,30 @@ function renderTimeline() {
     let currentStageIndex = steps.indexOf(currentReport.status);
     if (currentStageIndex === -1) {
         if (currentReport.status === 'verified' || currentReport.status === 'approved') currentStageIndex = 1;
-        else if (currentReport.status === 'assigned') currentStageIndex = 3; 
+        else if (currentReport.status === 'assigned') currentStageIndex = 3;
         else if (currentReport.status === 'in-progress') currentStageIndex = 3;
         else if (currentReport.status === 'resolved') currentStageIndex = 4;
         else if (currentReport.status === 'rejected') currentStageIndex = 0;
         else currentStageIndex = 0;
     } else if (currentReport.status === 'assigned') {
-        currentStageIndex = 3; 
+        currentStageIndex = 3;
     }
 
     const formatDate = (dateStr) => {
         if (!dateStr) return null;
-        return new Date(dateStr).toLocaleString('en-US', { 
-            year: 'numeric', 
-            month: 'numeric', 
-            day: 'numeric', 
-            hour: 'numeric', 
-            minute: 'numeric', 
-            hour12: true 
+        return new Date(dateStr).toLocaleString('en-US', {
+            year: 'numeric',
+            month: 'numeric',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: 'numeric',
+            hour12: true
         });
     };
     const timelineData = labels.map((label, idx) => {
         let dateDisplay = 'Pending';
         if (idx <= currentStageIndex) {
-            let timestamp = currentReport.created_at; 
+            let timestamp = currentReport.created_at;
 
             if (idx === 1) timestamp = currentReport.verified_at || currentReport.created_at;
             else if (idx === 2) timestamp = currentReport.assigned_at || currentReport.created_at;
@@ -197,7 +197,7 @@ function renderTimeline() {
         }
 
         return {
-            label, 
+            label,
             date: dateDisplay,
             completed: idx <= currentStageIndex
         };
@@ -262,12 +262,12 @@ function renderStatusIndicator() {
     } else if (currentReport) {
         const reportIdFull = currentReport.id || '';
         const reportIdDisplay = reportIdFull ? reportIdFull.split('-')[0].substring(0, 8) : 'Unknown';
-        
+
         const statusText = (currentReport.status || 'pending').charAt(0).toUpperCase() + (currentReport.status || 'pending').slice(1);
         const statusClass = ['in-progress', 'assigned'].includes(currentReport.status) ? 'in-progress' :
             (currentReport.status === 'resolved' ? 'completed' : 'pending');
 
-        const displayLocation = (currentReport.latitude != null && currentReport.longitude != null) 
+        const displayLocation = (currentReport.latitude != null && currentReport.longitude != null)
             ? `${currentReport.latitude}, ${currentReport.longitude}`
             : (currentReport.location ? currentReport.location.split('|')[0] : 'N/A');
 
@@ -452,25 +452,25 @@ function handleAfterImageUpload(event, type) {
     }
 
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = function (e) {
         const afterImgId = type === 'first' ? 'afterPhoto' : 'afterPhotoLast';
         const afterImg = document.getElementById(afterImgId);
         if (afterImg) {
             const imageData = e.target.result;
             afterImg.src = imageData;
             uploadedImages[type] = true;
-            
+
             // Store temporarily
             if (!currentReport) currentReport = {}; // Safety
             if (type === 'first') currentReport.tempAfterPhoto = imageData;
             else currentReport.tempAfterPhotoLast = imageData;
-            
+
             // Check if both are uploaded
             if (uploadedImages.first && uploadedImages.last) {
                 const checkbox = document.getElementById('completionCheckbox');
                 const wrapper = document.getElementById('checkboxWrapper');
                 const helper = document.getElementById('uploadHelperText');
-                
+
                 if (checkbox && wrapper) {
                     checkbox.disabled = false;
                     wrapper.classList.remove('disabled');
@@ -504,7 +504,7 @@ async function submitFinalReport() {
     const description = descriptionField ? descriptionField.value : '';
     const officerName = localStorage.getItem('user_name') || 'Official';
     const resolvedAt = new Date().toISOString();
-    
+
     // Safety check for ID
     const reportId = (currentReport && currentReport.id) || (new URLSearchParams(window.location.search)).get('id');
 
@@ -523,7 +523,7 @@ async function submitFinalReport() {
             currentReport.persistedAfterPhoto = currentReport.tempAfterPhoto || null;
             currentReport.persistedAfterPhotoLast = currentReport.tempAfterPhotoLast || null;
         }
-        
+
         // Save to IndexedDB (resolves QuotaExceededError for large images)
         const stateToSave = {
             description: description,
@@ -533,16 +533,16 @@ async function submitFinalReport() {
             afterPhotoLast: (currentReport && currentReport.tempAfterPhotoLast) || null
         };
         await ReportStorage.save(reportId, stateToSave);
-        
+
         // Refresh UI
         renderTimeline();
         renderStatusIndicator();
-        
+
         // Show success summary
         showResolutionSummary();
-        
+
         showAlert('Success', 'Report has been marked as completed!', 'success');
-        
+
     } catch (error) {
         console.error('Error submitting report:', error);
         showAlert('Error', 'Failed to update report status.', 'error');

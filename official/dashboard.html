@@ -215,14 +215,6 @@
         <div class="filters-strip">
             <div class="filter-group">
                 <div class="filter-item">
-                    <label>Issue Type</label>
-                    <select id="issueTypeFilter" onchange="applyFilters()">
-                        <option value="">All Types</option>
-                        <option value="pothole">Pothole</option>
-                        <option value="crack">Crack</option>
-                    </select>
-                </div>
-                <div class="filter-item">
                     <label>Severity</label>
                     <select id="severityFilter" onchange="applyFilters()">
                         <option value="">All</option>
@@ -240,6 +232,7 @@
                         <option value="verified">Verified</option>
                         <option value="assigned">Assigned</option>
                         <option value="in-progress">In Progress</option>
+                        <option value="completed">Completed</option>
                     </select>
                 </div>
                 <div class="filter-item">
@@ -258,7 +251,7 @@
         <section class="reports-section">
             <header class="section-header">
                 <h2>Recent Reports</h2>
-                <a href="work-reports.html" class="view-all">View All Reports</a>
+                <!-- <a href="work-reports.html" class="view-all">View All Reports</a> -->
             </header>
             <div class="report-source-toggle" style="margin-top: -0.5rem; margin-bottom: 1.25rem;">
                 <button id="sourceCitizenBtn" class="source-btn active" onclick="setSourceFilter('citizen')">Citizen
@@ -272,7 +265,7 @@
                         <tr>
                             <th>REPORT ID</th>
                             <th>LOCATION</th>
-                            <th>ISSUE TYPE</th>
+                            <th>DEPARTMENT</th>
                             <th>STATUS</th>
                             <th>PRIORITY</th>
                             <th>DATE</th>

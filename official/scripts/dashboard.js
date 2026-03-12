@@ -90,7 +90,6 @@ function updateKPIs() {
 function applyFilters() {
     const searchInput = document.getElementById('dashboardSearchInput');
     const searchText = (searchInput ? searchInput.value : '').toLowerCase();
-    const issueTypeFilter = document.getElementById('issueTypeFilter').value;
     const severityFilter = document.getElementById('severityFilter').value;
     const statusFilter = document.getElementById('statusFilter').value;
     const startDate = document.getElementById('startDateFilter').value;
@@ -106,8 +105,7 @@ function applyFilters() {
             location.includes(searchText) ||
             damageType.includes(searchText);
 
-        // 2. Issue Type Logic
-        const issueTypeMatch = !issueTypeFilter || (report.damage_type || '').toLowerCase().includes(issueTypeFilter);
+        // 2. Issue Type Logic (Removed)
 
         // 3. Severity Logic
         const severityMatch = !severityFilter || (report.severity || '').toLowerCase() === severityFilter;
@@ -154,7 +152,7 @@ function applyFilters() {
             sourceMatch = getReportSource(report) === 'dashcam';
         }
 
-        return searchMatch && issueTypeMatch && severityMatch && statusMatch && dateMatch && sourceMatch;
+        return searchMatch && severityMatch && statusMatch && dateMatch && sourceMatch;
     });
 
     currentPage = 1;
@@ -171,7 +169,6 @@ function getReportSource(report) {
 function clearFilters() {
     const searchInput = document.getElementById('dashboardSearchInput');
     if (searchInput) searchInput.value = '';
-    document.getElementById('issueTypeFilter').value = '';
     document.getElementById('severityFilter').value = '';
     document.getElementById('statusFilter').value = '';
     document.getElementById('startDateFilter').value = '';
@@ -269,7 +266,7 @@ function renderReportsTable() {
         else if (reportStatus === 'verified' || reportStatus === 'approved') { statusPill = 'pill-progress'; statusText = 'Verified'; }
         else if (reportStatus === 'assigned') { statusPill = 'pill-progress'; statusText = 'Assigned'; }
         else if (reportStatus === 'in-progress') { statusPill = 'pill-progress'; statusText = 'In Progress'; }
-        else if (reportStatus === 'resolved' || reportStatus === 'completed') { statusPill = 'pill-resolved'; statusText = 'Resolved'; }
+        else if (reportStatus === 'resolved' || reportStatus === 'completed') { statusPill = 'pill-resolved'; statusText = 'Completed'; }
         else if (reportStatus === 'rejected') { statusPill = 'pill-resolved'; statusText = 'Rejected'; }
 
         const dateStr = report.created_at ? new Date(report.created_at).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A';
@@ -279,7 +276,7 @@ function renderReportsTable() {
             <tr>
                 <td style="font-weight: 600;" title="${report.id}">${report.id.split('-')[0].substring(0, 8)}</td>
                 <td>${displayLocation}</td>
-                <td>${report.damage_type || 'Road Damage'}</td>
+                <td style="color: var(--text-dark); font-weight: 500;">Roads</td>
                 <td><span class="pill ${statusPill}">${statusText}</span></td>
                 <td><span class="pill pill-${severity}">${severityText}</span></td>
                 <td style="color: var(--text-muted);">${dateStr}</td>
@@ -309,10 +306,25 @@ function renderReportsTable() {
                         ` : ''}
                         ${(reportStatus === 'assigned' || reportStatus === 'in-progress') ? `
                             <button class="btn-action btn-monitor" title="Monitor" onclick="monitorReport('${report.id}')">
-                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><path d="M12 9v3l2 2"/><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                  <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                                  <circle cx="12" cy="12" r="3" />
                                 </svg>
                                 Monitor
+                            </button>
+                            <button class="btn-action btn-completed" title="Assignment Done" style="cursor: default; opacity: 0.8; background-color: var(--success-bg, #dcfce7); color: var(--success-text, #166534); border: 1px solid var(--success-border, #bbf7d0);" onclick="event.preventDefault();">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M20 6 9 17l-5-5"/>
+                                </svg>
+                                Completed
+                            </button>
+                        ` : ''}
+                        ${(reportStatus === 'resolved' || reportStatus === 'completed') ? `
+                            <button class="btn-action btn-completed" title="Completed" style="cursor: default; opacity: 0.8; background-color: var(--success-bg, #dcfce7); color: var(--success-text, #166534); border: 1px solid var(--success-border, #bbf7d0);" onclick="event.preventDefault();">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M20 6 9 17l-5-5"/>
+                                </svg>
+                                Completed
                             </button>
                         ` : ''}
                     </div>

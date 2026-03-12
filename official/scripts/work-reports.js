@@ -28,7 +28,7 @@ async function initDashboard() {
 // =====================================================
 async function loadReports() {
     const tbody = document.getElementById('reportsTableBody');
-    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:2rem;"><div class="spinner"></div> Loading reports...</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:2rem;"><div class="spinner"></div> Loading reports...</td></tr>`;
 
     try {
         const response = await Auth.fetchWithAuth('/api/official/work-reports');
@@ -40,7 +40,7 @@ async function loadReports() {
         renderTable();
     } catch (error) {
         console.error('Error loading reports:', error);
-        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:2rem;color:red;">Error: ${error.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:2rem;color:red;">Error: ${error.message}</td></tr>`;
         showModal('Error', error.message);
     }
 }
@@ -68,31 +68,67 @@ function renderTable() {
     if (currentReports.length === 0) {
         tbody.innerHTML = `
                 <tr>
-                    <td colspan="9" style="text-align:center;padding:2rem;">
+                    <td colspan="7" style="text-align:center;padding:2rem;">
                         No notices found
                     </td>
                 </tr>`;
         return;
     }
 
-    tbody.innerHTML = currentReports.map(report => `
+    tbody.innerHTML = currentReports.map(report => {
+        const uniqueNoticeId = report.notice_id ? report.notice_id.split('-')[0].substring(0, 8) : report.id.split('-')[0].substring(0, 8);
+        return `
             <tr>
-                <td title="${report.notice_id || '-'}"><strong>${report.notice_id ? report.notice_id.split('-')[0].substring(0, 8) : '-'}</strong></td>
+                <td title="${report.notice_id || report.id}"><strong>NTC-${uniqueNoticeId.toUpperCase()}</strong></td>
                 <td>${report.location || '-'}</td>
-                <td>${report.department || '-'}</td>
+                <td style="color: var(--text-dark); font-weight: 500;">Roads</td>
                 <td>${report.work_type || '-'}</td>
                 <td>${new Date(report.created_at).toLocaleDateString()}</td>
-                <td>-</td>        <!-- Traffic Div (not applicable) -->
-                <td>-</td>        <!-- Severity (not applicable) -->
-                <td>${report.status}</td>
+                <td><span class="pill ${report.status === 'completed' ? 'pill-resolved' : (report.status === 'in_progress' || report.status === 'assigned' ? 'pill-progress' : 'pill-pending')}">${report.status}</span></td>
                 <td>
-                    <button class="btn btn-primary btn-sm"
-                        onclick="openSidePanel('${report.id}')">
-                        View
-                    </button>
+                    <div class="action-btns">
+                        <button class="btn-action btn-view" title="View Details" onclick="openSidePanel('${report.id}')">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                            </svg>
+                            View
+                        </button>
+                        ${(report.status === 'verified' || report.status === 'approved' || report.status === 'pending') ? `
+                            <button class="btn-action btn-assign" title="Assign" onclick="goToAssignment('${report.id}')">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/>
+                                </svg>
+                                Assign
+                            </button>
+                        ` : ''}
+                        ${(report.status === 'assigned' || report.status === 'in_progress') ? `
+                            <button class="btn-action btn-monitor" title="Monitor" onclick="goToMonitoring('${report.id}')">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                  <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                                  <circle cx="12" cy="12" r="3" />
+                                </svg>
+                                Monitor
+                            </button>
+                            <button class="btn-action btn-completed" title="Assignment Done" style="cursor: default; opacity: 0.8; background-color: var(--success-bg, #dcfce7); color: var(--success-text, #166534); border: 1px solid var(--success-border, #bbf7d0);" onclick="event.preventDefault();">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M20 6 9 17l-5-5"/>
+                                </svg>
+                                Completed
+                            </button>
+                        ` : ''}
+                        ${(report.status === 'resolved' || report.status === 'completed') ? `
+                            <button class="btn-action btn-completed" title="Completed" style="cursor: default; opacity: 0.8; background-color: var(--success-bg, #dcfce7); color: var(--success-text, #166534); border: 1px solid var(--success-border, #bbf7d0);" onclick="event.preventDefault();">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M20 6 9 17l-5-5"/>
+                                </svg>
+                                Completed
+                            </button>
+                        ` : ''}
+                    </div>
                 </td>
             </tr>
-        `).join('');
+        `;
+    }).join('');
 }
 
 
@@ -145,7 +181,35 @@ function goToVerification(reportId) {
         }
     }
     const page = isDashcam ? 'dashcam-verification.html' : 'verification.html';
-    window.location.href = `${page}?id=${reportId}`;
+    window.location.href = `${page}?id=${reportId}&type=work`;
+}
+
+function goToAssignment(reportId) {
+    const report = workReports.find(r => r.id === reportId);
+    let isDashcam = false;
+    if (report) {
+        if (report.report_source === 'dashcam') {
+            isDashcam = true;
+        } else if (report.image_url && report.image_url.includes('dashcam_first_')) {
+            isDashcam = true;
+        }
+    }
+    const page = isDashcam ? 'dashcam-assignment.html' : 'assignment.html';
+    window.location.href = `${page}?id=${reportId}&type=work`;
+}
+
+function goToMonitoring(reportId) {
+    const report = workReports.find(r => r.id === reportId);
+    let isDashcam = false;
+    if (report) {
+        if (report.report_source === 'dashcam') {
+            isDashcam = true;
+        } else if (report.image_url && report.image_url.includes('dashcam_first_')) {
+            isDashcam = true;
+        }
+    }
+    const page = isDashcam ? 'dashcam-monitoring.html' : 'monitoring.html';
+    window.location.href = `${page}?id=${reportId}&type=work`;
 }
 
 // =====================================================
@@ -155,8 +219,10 @@ function openSidePanel(reportId) {
     const report = workReports.find(r => r.id === reportId);
     if (!report) return;
 
+    const uniqueNoticeId = report.notice_id ? report.notice_id : `NTC-${report.id.split('-')[0].substring(0, 8).toUpperCase()}`;
+
     document.getElementById('panelContent').innerHTML = `
-            <p><strong>Notice ID:</strong> ${report.notice_id || report.id}</p>
+            <p><strong>Notice ID:</strong> ${uniqueNoticeId}</p>
             <p><strong>Department:</strong> ${report.department}</p>
             <p><strong>Work Type:</strong> ${report.work_type}</p>
             <p><strong>Location:</strong> ${report.location}</p>
@@ -306,6 +372,8 @@ async function uploadNoticePDF(file) {
 // EXPORT GLOBALS
 // =====================================================
 window.goToVerification = goToVerification;
+window.goToAssignment = goToAssignment;
+window.goToMonitoring = goToMonitoring;
 window.openSidePanel = openSidePanel;
 window.closeSidePanel = closeSidePanel;
 window.clearFilters = clearFilters;
